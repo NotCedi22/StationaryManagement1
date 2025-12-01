@@ -8,3 +8,4 @@ public class Category
     // Navigation property for items in this category
     public ICollection<StationeryItem> Items { get; set; } = new List<StationeryItem>();
 }
+//a
