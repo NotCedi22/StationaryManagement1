@@ -1,0 +1,19 @@
+﻿@model StationaryManagement.Models.Employee
+
+@{
+    ViewData["Title"] = "Employee Details";
+}
+
+<h2>Employee Details</h2>
+
+<div>
+    <h4>@Model.Name</h4>
+    <p>Email: @Model.Email</p>
+    <p>Role: @Model.Role?.RoleName</p>
+    <p>Active: @Model.IsActive</p>
+    <p>Created At: @Model.CreatedAt</p>
+    <p>Modified At: @Model.ModifiedAt</p>
+</div>
+
+<a asp-action="Edit" asp-route-id="@Model.EmployeeId" class="btn btn-warning">Edit</a>
+<a asp-action="Index" class="btn btn-secondary">Back to List</a>

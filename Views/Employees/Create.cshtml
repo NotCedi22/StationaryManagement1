@@ -1,0 +1,34 @@
+﻿@model StationaryManagement.Models.Employee
+
+@{
+    ViewData["Title"] = "Create Employee";
+}
+
+<h2>Create Employee</h2>
+
+<form asp-action="Create" method="post">
+    <div class="form-group">
+        <label asp-for="Name"></label>
+        <input asp-for="Name" class="form-control" />
+    </div>
+    <div class="form-group">
+        <label asp-for="Email"></label>
+        <input asp-for="Email" class="form-control" />
+    </div>
+    <div class="form-group">
+        <label asp-for="PasswordHash">Password</label>
+        <input asp-for="PasswordHash" type="password" class="form-control" />
+    </div>
+    <div class="form-group">
+        <label asp-for="RoleId">Role</label>
+        <select asp-for="RoleId" asp-items="@(new SelectList(ViewBag.Roles, "RoleId", "RoleName"))" class="form-control">
+            <option value="">-- Select Role --</option>
+        </select>
+    </div>
+    <div class="form-group">
+        <label asp-for="IsActive"></label>
+        <input asp-for="IsActive" type="checkbox" />
+    </div>
+    <button type="submit" class="btn btn-success">Create</button>
+    <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+</form>

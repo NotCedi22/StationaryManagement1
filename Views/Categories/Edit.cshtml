@@ -1,0 +1,55 @@
+﻿@model StationaryManagement.Models.Employee
+@{
+    ViewData["Title"] = "Edit Employee";
+
+    // Prepare masked password placeholder
+    var passwordMask = Model.PasswordHash != null ? new string('*', Model.PasswordHash.Length) : "";
+}
+
+<h2>Edit Employee</h2>
+
+<form asp-action="Edit" method="post">
+    <input type="hidden" asp-for="EmployeeId" />
+
+    <div class="form-group">
+        <label asp-for="Name"></label>
+        <input asp-for="Name" class="form-control" />
+        <span asp-validation-for="Name" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="Email"></label>
+        <input asp-for="Email" class="form-control" />
+        <span asp-validation-for="Email" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label>Password</label>
+        <input type="password" name="NewPassword"
+               class="form-control"
+               placeholder="@passwordMask" />
+        <small class="text-muted">Leave blank to keep current password</small>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="RoleId">Role</label>
+        <select asp-for="RoleId" asp-items="@(new SelectList(ViewBag.Roles, "RoleId", "RoleName", Model.RoleId))" class="form-control">
+            <option value="">-- Select Role --</option>
+        </select>
+    </div>
+
+    <div class="form-group form-check">
+        <input type="hidden" asp-for="IsActive" value="false" />
+        <input asp-for="IsActive" class="form-check-input" />
+        <label asp-for="IsActive" class="form-check-label"></label>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Save</button>
+    <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+</form>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

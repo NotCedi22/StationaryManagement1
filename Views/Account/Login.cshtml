@@ -1,0 +1,36 @@
+﻿@{
+    ViewData["Title"] = "Login";
+}
+
+<h2>Login</h2>
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">@TempData["Error"]</div>
+}
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+
+<form asp-action="Login" method="post">
+    <div class="mb-3">
+        <label>Email</label>
+        <input name="email" class="form-control" placeholder="Email" required />
+    </div>
+
+    <div class="mb-3">
+        <label>Password</label>
+        <input name="password" type="password" class="form-control" placeholder="Password" required />
+    </div>
+
+    <div class="form-check mb-3">
+        <input class="form-check-input" type="checkbox" name="rememberMe" id="rememberMe" />
+        <label class="form-check-label" for="rememberMe">
+            Remember Me
+        </label>
+    </div>
+
+    <button class="btn btn-primary">Login</button>
+</form>

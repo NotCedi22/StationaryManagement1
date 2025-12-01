@@ -1,0 +1,41 @@
+﻿@model IEnumerable<StationaryManagement.Models.StationeryItem>
+
+@{
+    ViewData["Title"] = "Stationery Items";
+}
+
+<h1>Stationery Items</h1>
+
+<p>
+    <a asp-action="Create" class="btn btn-primary">Create New Item</a>
+</p>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>@Html.DisplayNameFor(model => model.First().ItemName)</th>
+            <th>@Html.DisplayNameFor(model => model.First().Description)</th>
+            <th>Category</th>
+            <th>@Html.DisplayNameFor(model => model.First().UnitCost)</th>
+            <th>@Html.DisplayNameFor(model => model.First().CurrentStock)</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@Html.DisplayFor(m => item.ItemName)</td>
+                <td>@Html.DisplayFor(m => item.Description)</td>
+                <td>@item.Category?.CategoryName</td>
+                <td>@Html.DisplayFor(m => item.UnitCost)</td>
+                <td>@Html.DisplayFor(m => item.CurrentStock)</td>
+                <td>
+                    <a asp-action="Edit" asp-route-id="@item.ItemId" class="btn btn-sm btn-warning">Edit</a>
+                    <a asp-action="Details" asp-route-id="@item.ItemId" class="btn btn-sm btn-info">Details</a>
+                    <a asp-action="Delete" asp-route-id="@item.ItemId" class="btn btn-sm btn-danger">Delete</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
