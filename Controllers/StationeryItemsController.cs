@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using StationaryManagement.Data;
@@ -20,27 +16,33 @@ namespace StationaryManagement.Controllers
         }
 
         // GET: StationeryItems
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(int? categoryId)
         {
-            var appDBContext = _context.StationeryItems.Include(s => s.Category);
-            return View(await appDBContext.ToListAsync());
+            // Get categories for filter dropdown
+            ViewData["Categories"] = new SelectList(await _context.Categories.ToListAsync(), "CategoryId", "CategoryName");
+
+            // Get stationery items with category
+            var query = _context.StationeryItems.Include(s => s.Category).AsQueryable();
+
+            if (categoryId.HasValue)
+            {
+                query = query.Where(s => s.CategoryId == categoryId.Value);
+            }
+
+            var items = await query.ToListAsync();
+            return View(items);
         }
 
         // GET: StationeryItems/Details/5
         public async Task<IActionResult> Details(int? id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
+            if (id == null) return NotFound();
 
             var stationeryItem = await _context.StationeryItems
                 .Include(s => s.Category)
                 .FirstOrDefaultAsync(m => m.ItemId == id);
-            if (stationeryItem == null)
-            {
-                return NotFound();
-            }
+
+            if (stationeryItem == null) return NotFound();
 
             return View(stationeryItem);
         }
@@ -48,16 +50,14 @@ namespace StationaryManagement.Controllers
         // GET: StationeryItems/Create
         public IActionResult Create()
         {
-            ViewData["CategoryId"] = new SelectList(_context.Categories, "CategoryId", "CategoryId");
+            PopulateCategories();
             return View();
         }
 
         // POST: StationeryItems/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("ItemId,ItemName,Description,CategoryId,UnitCost,CurrentStock,ImagePath,CreatedAt,ModifiedAt")] StationeryItem stationeryItem)
+        public async Task<IActionResult> Create([Bind("ItemId,ItemName,Description,CategoryId,UnitCost,CurrentStock,ImagePath")] StationeryItem stationeryItem)
         {
             if (ModelState.IsValid)
             {
@@ -65,78 +65,76 @@ namespace StationaryManagement.Controllers
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["CategoryId"] = new SelectList(_context.Categories, "CategoryId", "CategoryId", stationeryItem.CategoryId);
+            PopulateCategories(stationeryItem.CategoryId);
             return View(stationeryItem);
         }
 
         // GET: StationeryItems/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
+            if (id == null) return NotFound();
 
             var stationeryItem = await _context.StationeryItems.FindAsync(id);
-            if (stationeryItem == null)
-            {
-                return NotFound();
-            }
-            ViewData["CategoryId"] = new SelectList(_context.Categories, "CategoryId", "CategoryId", stationeryItem.CategoryId);
+            if (stationeryItem == null) return NotFound();
+
+            PopulateCategories(stationeryItem.CategoryId);
             return View(stationeryItem);
         }
 
         // POST: StationeryItems/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("ItemId,ItemName,Description,CategoryId,UnitCost,CurrentStock,ImagePath,CreatedAt,ModifiedAt")] StationeryItem stationeryItem)
+        public async Task<IActionResult> Edit(int id, StationeryItem stationeryItem, IFormFile? ImageFile)
         {
             if (id != stationeryItem.ItemId)
-            {
                 return NotFound();
-            }
 
             if (ModelState.IsValid)
             {
                 try
                 {
+                    // Handle uploaded image
+                    if (ImageFile != null && ImageFile.Length > 0)
+                    {
+                        var fileName = Path.GetFileName(ImageFile.FileName);
+                        var filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/images", fileName);
+
+                        using (var stream = new FileStream(filePath, FileMode.Create))
+                        {
+                            await ImageFile.CopyToAsync(stream);
+                        }
+
+                        stationeryItem.ImagePath = fileName;
+                    }
+
                     _context.Update(stationeryItem);
                     await _context.SaveChangesAsync();
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!StationeryItemExists(stationeryItem.ItemId))
-                    {
+                    if (!_context.StationeryItems.Any(e => e.ItemId == stationeryItem.ItemId))
                         return NotFound();
-                    }
                     else
-                    {
                         throw;
-                    }
                 }
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["CategoryId"] = new SelectList(_context.Categories, "CategoryId", "CategoryId", stationeryItem.CategoryId);
+
+            // Repopulate category dropdown
+            ViewData["CategoryId"] = new SelectList(_context.Categories, "CategoryId", "CategoryName", stationeryItem.CategoryId);
             return View(stationeryItem);
         }
 
         // GET: StationeryItems/Delete/5
         public async Task<IActionResult> Delete(int? id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
+            if (id == null) return NotFound();
 
             var stationeryItem = await _context.StationeryItems
                 .Include(s => s.Category)
                 .FirstOrDefaultAsync(m => m.ItemId == id);
-            if (stationeryItem == null)
-            {
-                return NotFound();
-            }
+
+            if (stationeryItem == null) return NotFound();
 
             return View(stationeryItem);
         }
@@ -150,15 +148,21 @@ namespace StationaryManagement.Controllers
             if (stationeryItem != null)
             {
                 _context.StationeryItems.Remove(stationeryItem);
+                await _context.SaveChangesAsync();
             }
-
-            await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
 
         private bool StationeryItemExists(int id)
         {
             return _context.StationeryItems.Any(e => e.ItemId == id);
+        }
+
+        // -----------------------
+        // Helper: Populate category dropdown
+        private void PopulateCategories(object selectedCategory = null)
+        {
+            ViewData["CategoryId"] = new SelectList(_context.Categories, "CategoryId", "CategoryName", selectedCategory);
         }
     }
 }
