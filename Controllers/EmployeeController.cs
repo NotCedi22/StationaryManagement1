@@ -33,7 +33,6 @@ namespace StationaryManagement.Controllers
                 .FirstOrDefaultAsync(e => e.EmployeeId == id);
 
             if (employee == null) return NotFound();
-
             return View(employee);
         }
 
@@ -47,14 +46,24 @@ namespace StationaryManagement.Controllers
         // POST: Employees/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(Employee employee)
+        public async Task<IActionResult> Create(Employee employee, string? Password)
         {
             if (ModelState.IsValid)
             {
+                if (!string.IsNullOrWhiteSpace(Password))
+                {
+                    // Hash the password using BCrypt
+                    employee.PasswordHash = BCrypt.Net.BCrypt.HashPassword(Password);
+                }
+
+                employee.CreatedAt = DateTime.UtcNow;
+                employee.IsActive = true;
+
                 _context.Add(employee);
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
+
             ViewBag.Roles = _context.Roles.ToList();
             return View(employee);
         }
@@ -70,6 +79,7 @@ namespace StationaryManagement.Controllers
             ViewBag.Roles = _context.Roles.ToList();
             return View(employee);
         }
+
         // POST: Employees/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -80,40 +90,29 @@ namespace StationaryManagement.Controllers
 
             if (ModelState.IsValid)
             {
-                try
+                var existing = await _context.Employees.FirstOrDefaultAsync(e => e.EmployeeId == id);
+                if (existing == null) return NotFound();
+
+                existing.Name = employee.Name;
+                existing.Email = employee.Email;
+                existing.RoleId = employee.RoleId;
+                existing.IsActive = employee.IsActive;
+
+                if (!string.IsNullOrWhiteSpace(NewPassword))
                 {
-                    // Fetch the existing tracked employee
-                    var existing = await _context.Employees.FirstOrDefaultAsync(e => e.EmployeeId == id);
-                    if (existing == null) return NotFound();
-
-                    // Update only fields that can change
-                    existing.Name = employee.Name;
-                    existing.Email = employee.Email;
-                    existing.RoleId = employee.RoleId;
-                    existing.IsActive = employee.IsActive;
-
-                    // Update password ONLY if a new password was provided
-                    if (!string.IsNullOrWhiteSpace(NewPassword))
-                    {
-                        existing.PasswordHash = NewPassword; // Hash if needed
-                    }
-
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!EmployeeExists(employee.EmployeeId))
-                        return NotFound();
-                    else
-                        throw;
+                    existing.PasswordHash = BCrypt.Net.BCrypt.HashPassword(NewPassword);
                 }
 
+                existing.ModifiedAt = DateTime.UtcNow;
+
+                await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
 
             ViewBag.Roles = _context.Roles.ToList();
             return View(employee);
         }
+
         // GET: Employees/Delete/5
         public async Task<IActionResult> Delete(int? id)
         {
@@ -132,12 +131,27 @@ namespace StationaryManagement.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var employee = await _context.Employees.FindAsync(id);
+            var employee = await _context.Employees
+                .Include(e => e.Subordinates)
+                .Include(e => e.StationeryRequests)
+                .Include(e => e.Notifications)
+                .FirstOrDefaultAsync(e => e.EmployeeId == id);
+
             if (employee != null)
             {
+                // Remove related entities
+                _context.StationeryRequests.RemoveRange(employee.StationeryRequests);
+                _context.Notifications.RemoveRange(employee.Notifications);
+
+                // Reassign subordinates
+                foreach (var sub in employee.Subordinates)
+                    sub.SuperiorId = null;
+
+                // Hard delete employee
                 _context.Employees.Remove(employee);
                 await _context.SaveChangesAsync();
             }
+
             return RedirectToAction(nameof(Index));
         }
 

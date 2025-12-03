@@ -1,24 +1,39 @@
-﻿namespace StationaryManagement.Models;
-using StationaryManagement.Models;
+﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
-public class StationeryRequest
+namespace StationaryManagement.Models
 {
-    [Key]
-    public int RequestId { get; set; }
+    // Enum for request status
+    public enum RequestStatus
+    {
+        Pending,
+        Approved,
+        Rejected,
+        Withdrawn,
+        Cancelled
+    }
 
-    public int EmployeeId { get; set; }
-    public int SuperiorId { get; set; }
-    public DateTime RequestDate { get; set; } = DateTime.UtcNow;
-    public DateTime? FromDate { get; set; }
-    public DateTime? ToDate { get; set; }
-    public string Status { get; set; } = "Pending";
-    public decimal TotalCost { get; set; }
-    public string? Reason { get; set; }
-    public DateTime? LastStatusChangedAt { get; set; }
+    public class StationeryRequest
+    {
+        [Key]
+        public int RequestId { get; set; }
 
-    // Navigation
-    public Employee? Employee { get; set; }
-    public Employee? Superior { get; set; }
-    public ICollection<RequestItem> RequestItems { get; set; } = new List<RequestItem>();
+        public int EmployeeId { get; set; }       // Who requested
+        public int SuperiorId { get; set; }       // Manager/Superior
+        public DateTime RequestDate { get; set; } = DateTime.UtcNow;
+        public DateTime? FromDate { get; set; }
+        public DateTime? ToDate { get; set; }
+        public decimal TotalCost { get; set; }
+        public string? Reason { get; set; }
+        public DateTime? LastStatusChangedAt { get; set; }
+
+        // Use enum instead of string for Status
+        public RequestStatus Status { get; set; } = RequestStatus.Pending;
+
+        // Navigation properties
+        public Employee? Employee { get; set; }
+        public Employee? Superior { get; set; }
+        public ICollection<RequestItem> RequestItems { get; set; } = new List<RequestItem>();
+    }
 }

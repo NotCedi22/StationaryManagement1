@@ -2,8 +2,6 @@
 using Microsoft.EntityFrameworkCore;
 using StationaryManagement.Data;
 using StationaryManagement.Models;
-using System.Security.Cryptography;
-using System.Text;
 
 namespace StationaryManagement.Controllers
 {
@@ -16,61 +14,45 @@ namespace StationaryManagement.Controllers
             _context = context;
         }
 
-        // ----------------------
-        // REGISTER (GET)
-        // ----------------------
-        [HttpGet]
-        public IActionResult Register()
-        {
-            return View();
-        }
+        // REGISTER
+        [HttpGet] public IActionResult Register() => View();
 
-        // ----------------------
-        // REGISTER (POST)
-        // ----------------------
         [HttpPost]
         public async Task<IActionResult> Register(Employee model, string password)
         {
-            if (!ModelState.IsValid)
-                return View(model);
+            if (!ModelState.IsValid) return View(model);
 
             if (await _context.Employees.AnyAsync(e => e.Email == model.Email))
             {
-                ModelState.AddModelError("", "Email already exists");
+                ModelState.AddModelError("", "Email already exists.");
                 return View(model);
             }
 
-            model.PasswordHash = HashPassword(password);
+            model.PasswordHash = BCrypt.Net.BCrypt.HashPassword(password);
             model.CreatedAt = DateTime.UtcNow;
             model.IsActive = true;
 
             _context.Employees.Add(model);
             await _context.SaveChangesAsync();
 
+            TempData["Success"] = "Registration successful! You can now log in.";
             return RedirectToAction("Login");
         }
 
+        // LOGIN
+        [HttpGet] public IActionResult Login() => View();
 
-        // ----------------------
-        // LOGIN (GET)
-        // ----------------------
-        [HttpGet]
-        public IActionResult Login()
-        {
-            return View();
-        }
-
-
-        // ----------------------
-        // LOGIN (POST)
-        // ----------------------
         [HttpPost]
-        public IActionResult Login(string email, string password, bool rememberMe)
+        public async Task<IActionResult> Login(string email, string password, bool rememberMe)
         {
-            var user = _context.Employees
-                .FirstOrDefault(e => e.Email == email && e.PasswordHash == password);
+            if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(password))
+            {
+                TempData["Error"] = "Email and password are required.";
+                return RedirectToAction("Login");
+            }
 
-            if (user == null)
+            var user = await _context.Employees.FirstOrDefaultAsync(e => e.Email == email);
+            if (user == null || !BCrypt.Net.BCrypt.Verify(password, user.PasswordHash))
             {
                 TempData["Error"] = "Invalid email or password.";
                 return RedirectToAction("Login");
@@ -82,11 +64,11 @@ namespace StationaryManagement.Controllers
                 return RedirectToAction("Login");
             }
 
-            // Save short session normally
+            // Save session
             HttpContext.Session.SetInt32("EmployeeId", user.EmployeeId);
             HttpContext.Session.SetString("EmployeeName", user.Name);
+            HttpContext.Session.SetInt32("RoleId", user.RoleId);
 
-            // ✔ Remember Me: Save cookie for 30 days
             if (rememberMe)
             {
                 Response.Cookies.Append("RememberEmployeeId", user.EmployeeId.ToString(), new CookieOptions
@@ -96,8 +78,14 @@ namespace StationaryManagement.Controllers
                     Secure = true,
                     IsEssential = true
                 });
-
                 Response.Cookies.Append("RememberEmployeeName", user.Name, new CookieOptions
+                {
+                    Expires = DateTime.UtcNow.AddDays(30),
+                    HttpOnly = true,
+                    Secure = true,
+                    IsEssential = true
+                });
+                Response.Cookies.Append("RememberRoleId", user.RoleId.ToString(), new CookieOptions
                 {
                     Expires = DateTime.UtcNow.AddDays(30),
                     HttpOnly = true,
@@ -110,70 +98,45 @@ namespace StationaryManagement.Controllers
             return RedirectToAction("Index", "Home");
         }
 
-
-
-        // ----------------------
         // LOGOUT
-        // ----------------------
         public IActionResult Logout()
         {
             HttpContext.Session.Clear();
+            Response.Cookies.Delete("RememberEmployeeId");
+            Response.Cookies.Delete("RememberEmployeeName");
+            Response.Cookies.Delete("RememberRoleId");
             return RedirectToAction("Login");
         }
 
-
-        // ----------------------
-        // CHANGE PASSWORD (GET)
-        // ----------------------
+        // CHANGE PASSWORD
         [HttpGet]
         public IActionResult ChangePassword()
         {
-            if (HttpContext.Session.GetInt32("EmployeeId") == null)
-                return RedirectToAction("Login");
-
+            if (HttpContext.Session.GetInt32("EmployeeId") == null) return RedirectToAction("Login");
             return View();
         }
 
-
-        // ----------------------
-        // CHANGE PASSWORD (POST)
-        // ----------------------
         [HttpPost]
         public async Task<IActionResult> ChangePassword(string currentPassword, string newPassword)
         {
             int? employeeId = HttpContext.Session.GetInt32("EmployeeId");
+            if (employeeId == null) return RedirectToAction("Login");
 
-            if (employeeId == null)
-                return RedirectToAction("Login");
+            var user = await _context.Employees.FindAsync(employeeId.Value);
+            if (user == null) return RedirectToAction("Login");
 
-            var employee = await _context.Employees.FindAsync(employeeId);
-
-            if (employee == null || employee.PasswordHash != HashPassword(currentPassword))
+            if (!BCrypt.Net.BCrypt.Verify(currentPassword, user.PasswordHash))
             {
-                ModelState.AddModelError("", "Current password is incorrect.");
-                return View();
+                TempData["Error"] = "Current password is incorrect.";
+                return RedirectToAction("ChangePassword");
             }
 
-            employee.PasswordHash = HashPassword(newPassword);
-            employee.ModifiedAt = DateTime.UtcNow;
-
+            user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
+            user.ModifiedAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
 
-            ViewBag.Success = "Password changed successfully!";
-            return View();
-        }
-
-
-        // ----------------------
-        // HASH PASSWORD
-        // ----------------------
-        private string HashPassword(string password)
-        {
-            using (var sha = SHA256.Create())
-            {
-                var bytes = sha.ComputeHash(Encoding.UTF8.GetBytes(password));
-                return Convert.ToBase64String(bytes);
-            }
+            TempData["Success"] = "Password changed successfully!";
+            return RedirectToAction("Index", "Home");
         }
     }
 }

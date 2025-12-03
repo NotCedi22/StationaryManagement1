@@ -5,7 +5,6 @@
 }
 
 <h1>Create Stationery Item</h1>
-
 <hr />
 
 <div class="row">
@@ -46,10 +45,9 @@
             </div>
 
             <div class="mb-3">
-                <label asp-for="ImagePath" class="form-label">Image Filename</label>
-                <input asp-for="ImagePath" class="form-control" />
-                <span asp-validation-for="ImagePath" class="text-danger"></span>
-                <small class="text-muted">Upload the file manually to wwwroot/images or implement file upload later.</small>
+                <label>Upload Image</label>
+                <input type="file" name="ImageFile" class="form-control" />
+                <small class="text-muted">Optional: upload an image; will save to wwwroot/images</small>
             </div>
 
             <button type="submit" class="btn btn-primary">Create</button>

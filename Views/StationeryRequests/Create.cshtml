@@ -2,61 +2,130 @@
 
 @{
     ViewData["Title"] = "Create Stationery Request";
+    // StationeryItemsDetails contains ItemId, ItemName, CurrentStock, UnitCost
+    var itemsDetails = ViewData["StationeryItemsDetails"] as List<StationaryManagement.ViewModels.StationeryItemViewModel>
+                       ?? new List<StationaryManagement.ViewModels.StationeryItemViewModel>();
 }
 
 <h1>Create Request</h1>
 
-<form asp-action="Create">
+<form asp-action="Create" method="post">
     <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
-    <div class="form-group">
-        <label asp-for="EmployeeId" class="control-label">Employee</label>
-        <select asp-for="EmployeeId" class="form-control" asp-items="ViewBag.EmployeeId">
+    <!-- Employee -->
+    <div class="mb-3">
+        <label asp-for="EmployeeId" class="form-label">Employee</label>
+        <select asp-for="EmployeeId" class="form-select" asp-items="@(ViewData["EmployeeId"] as SelectList)" required>
             <option value="">-- Select Employee --</option>
         </select>
         <span asp-validation-for="EmployeeId" class="text-danger"></span>
     </div>
 
-    <div class="form-group">
-        <label asp-for="SuperiorId" class="control-label">Superior</label>
-        <select asp-for="SuperiorId" class="form-control" asp-items="ViewBag.SuperiorId">
+    <!-- Superior -->
+    <div class="mb-3">
+        <label asp-for="SuperiorId" class="form-label">Superior</label>
+        <select asp-for="SuperiorId" class="form-select" asp-items="@(ViewData["SuperiorId"] as SelectList)" required>
             <option value="">-- Select Superior --</option>
         </select>
         <span asp-validation-for="SuperiorId" class="text-danger"></span>
     </div>
 
-    <div class="form-group">
-        <label asp-for="FromDate" class="control-label"></label>
+    <!-- From Date -->
+    <div class="mb-3">
+        <label asp-for="FromDate" class="form-label"></label>
         <input asp-for="FromDate" type="date" class="form-control" />
         <span asp-validation-for="FromDate" class="text-danger"></span>
     </div>
 
-    <div class="form-group">
-        <label asp-for="ToDate" class="control-label"></label>
+    <!-- To Date -->
+    <div class="mb-3">
+        <label asp-for="ToDate" class="form-label"></label>
         <input asp-for="ToDate" type="date" class="form-control" />
         <span asp-validation-for="ToDate" class="text-danger"></span>
     </div>
 
-    <div class="form-group">
-        <label asp-for="Reason" class="control-label"></label>
+    <!-- Reason -->
+    <div class="mb-3">
+        <label asp-for="Reason" class="form-label"></label>
         <textarea asp-for="Reason" class="form-control"></textarea>
         <span asp-validation-for="Reason" class="text-danger"></span>
     </div>
 
-    <div class="form-group">
-        <label asp-for="TotalCost" class="control-label"></label>
-        <input asp-for="TotalCost" class="form-control" />
-        <span asp-validation-for="TotalCost" class="text-danger"></span>
+    <!-- Total Cost (readonly, calculated automatically) -->
+    <div class="mb-3">
+        <label asp-for="TotalCost" class="form-label"></label>
+        <input asp-for="TotalCost" type="number" step="0.01" class="form-control" readonly id="TotalCost" />
     </div>
 
-    <div class="form-group">
+    <!-- Stationery Items with Quantities -->
+    <div class="mb-3">
+        <label class="form-label">Stationery Items</label>
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Item</th>
+                    <th>Stock</th>
+                    <th>Unit Cost</th>
+                    <th>Quantity</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in itemsDetails)
+                {
+                    // First item defaults to 1, others default to 0
+                    var defaultQty = itemsDetails.IndexOf(item) == 0 ? 1 : 0;
+                    var isDisabled = item.CurrentStock == 0;
+
+                    <tr class="@(isDisabled ? "table-danger" : "")">
+                        <td>@item.ItemName</td>
+                        <td>@item.CurrentStock</td>
+                        <td>@item.UnitCost</td>
+                        <td>
+                            <input type="number"
+                                   name="Quantities[@item.ItemId]"
+                                   min="0"
+                                   max="@item.CurrentStock"
+                                   value="@defaultQty"
+                                   class="form-control quantity-input"
+                                   data-unitcost="@item.UnitCost"
+                                   @(isDisabled ? "disabled" : "") />
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        <span class="text-muted">Quantity cannot exceed current stock. First item is requested by default.</span>
+    </div>
+
+    <!-- Submit / Back -->
+    <div class="mb-3">
         <input type="submit" value="Create" class="btn btn-primary" />
         <a asp-action="Index" class="btn btn-secondary">Back to List</a>
     </div>
 </form>
 
 @section Scripts {
-    @{
-        await Html.RenderPartialAsync("_ValidationScriptsPartial");
-    }
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        // Auto-calculate total cost when quantity changes
+        const qtyInputs = document.querySelectorAll(".quantity-input");
+        const totalCostInput = document.getElementById("TotalCost");
+
+        function calculateTotal() {
+            let total = 0;
+            qtyInputs.forEach(i => {
+                if (!i.disabled) {
+                    const qty = parseInt(i.value) || 0;
+                    const cost = parseFloat(i.dataset.unitcost) || 0;
+                    total += qty * cost;
+                }
+            });
+            totalCostInput.value = total.toFixed(2);
+        }
+
+        qtyInputs.forEach(i => i.addEventListener("input", calculateTotal));
+
+        // Initial calculation
+        calculateTotal();
+    </script>
 }

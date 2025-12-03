@@ -9,6 +9,7 @@ namespace StationaryManagement.Controllers
     public class StationeryItemsController : Controller
     {
         private readonly AppDBContext _context;
+        private readonly string _imageFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/images");
 
         public StationeryItemsController(AppDBContext context)
         {
@@ -18,18 +19,24 @@ namespace StationaryManagement.Controllers
         // GET: StationeryItems
         public async Task<IActionResult> Index(int? categoryId)
         {
-            // Get categories for filter dropdown
-            ViewData["Categories"] = new SelectList(await _context.Categories.ToListAsync(), "CategoryId", "CategoryName");
+            // Get current user and role
+            var currentUserId = GetCurrentUserId();
+            var currentUser = await _context.Employees.FindAsync(currentUserId);
+            var currentUserRoleId = currentUser?.RoleId ?? 0; // 1 = Admin
 
-            // Get stationery items with category
-            var query = _context.StationeryItems.Include(s => s.Category).AsQueryable();
+            ViewBag.RoleId = currentUserRoleId;
+
+            // Fetch all categories for dropdown
+            var categories = await _context.Categories.ToListAsync();
+            ViewData["Categories"] = new SelectList(categories, "CategoryId", "CategoryName", categoryId);
+
+            // Query items
+            var itemsQuery = _context.StationeryItems.Include(i => i.Category).AsQueryable();
 
             if (categoryId.HasValue)
-            {
-                query = query.Where(s => s.CategoryId == categoryId.Value);
-            }
+                itemsQuery = itemsQuery.Where(i => i.CategoryId == categoryId.Value);
 
-            var items = await query.ToListAsync();
+            var items = await itemsQuery.ToListAsync();
             return View(items);
         }
 
@@ -57,15 +64,28 @@ namespace StationaryManagement.Controllers
         // POST: StationeryItems/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("ItemId,ItemName,Description,CategoryId,UnitCost,CurrentStock,ImagePath")] StationeryItem stationeryItem)
+        public async Task<IActionResult> Create(StationeryItem stationeryItem, IFormFile? ImageFile)
         {
             if (ModelState.IsValid)
             {
+                // Handle image upload
+                if (ImageFile != null && ImageFile.Length > 0)
+                {
+                    var fileName = Path.GetFileName(ImageFile.FileName);
+                    var filePath = Path.Combine(_imageFolder, fileName);
+
+                    using (var stream = new FileStream(filePath, FileMode.Create))
+                        await ImageFile.CopyToAsync(stream);
+
+                    stationeryItem.ImagePath = fileName;
+                }
+
                 _context.Add(stationeryItem);
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
-            PopulateCategories(stationeryItem.CategoryId ?? 0);
+
+            PopulateCategories(stationeryItem.CategoryId);
             return View(stationeryItem);
         }
 
@@ -77,7 +97,7 @@ namespace StationaryManagement.Controllers
             var stationeryItem = await _context.StationeryItems.FindAsync(id);
             if (stationeryItem == null) return NotFound();
 
-            PopulateCategories(stationeryItem.CategoryId ?? 0);
+            PopulateCategories(stationeryItem.CategoryId);
             return View(stationeryItem);
         }
 
@@ -86,23 +106,20 @@ namespace StationaryManagement.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, StationeryItem stationeryItem, IFormFile? ImageFile)
         {
-            if (id != stationeryItem.ItemId)
-                return NotFound();
+            if (id != stationeryItem.ItemId) return NotFound();
 
             if (ModelState.IsValid)
             {
                 try
                 {
-                    // Handle uploaded image
+                    // Handle new image upload
                     if (ImageFile != null && ImageFile.Length > 0)
                     {
                         var fileName = Path.GetFileName(ImageFile.FileName);
-                        var filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/images", fileName);
+                        var filePath = Path.Combine(_imageFolder, fileName);
 
                         using (var stream = new FileStream(filePath, FileMode.Create))
-                        {
                             await ImageFile.CopyToAsync(stream);
-                        }
 
                         stationeryItem.ImagePath = fileName;
                     }
@@ -117,11 +134,11 @@ namespace StationaryManagement.Controllers
                     else
                         throw;
                 }
+
                 return RedirectToAction(nameof(Index));
             }
 
-            // Repopulate category dropdown
-            ViewData["CategoryId"] = new SelectList(_context.Categories, "CategoryId", "CategoryName", stationeryItem.CategoryId);
+            PopulateCategories(stationeryItem.CategoryId);
             return View(stationeryItem);
         }
 
@@ -129,14 +146,9 @@ namespace StationaryManagement.Controllers
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null) return NotFound();
-
-            var stationeryItem = await _context.StationeryItems
-                .Include(s => s.Category)
-                .FirstOrDefaultAsync(m => m.ItemId == id);
-
-            if (stationeryItem == null) return NotFound();
-
-            return View(stationeryItem);
+            var item = await _context.StationeryItems.FindAsync(id);
+            if (item == null) return NotFound();
+            return View(item);
         }
 
         // POST: StationeryItems/Delete/5
@@ -144,25 +156,31 @@ namespace StationaryManagement.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var stationeryItem = await _context.StationeryItems.FindAsync(id);
-            if (stationeryItem != null)
+            var item = await _context.StationeryItems.FindAsync(id);
+            if (item != null)
             {
-                _context.StationeryItems.Remove(stationeryItem);
+                _context.StationeryItems.Remove(item);
                 await _context.SaveChangesAsync();
             }
             return RedirectToAction(nameof(Index));
         }
 
-        private bool StationeryItemExists(int id)
-        {
-            return _context.StationeryItems.Any(e => e.ItemId == id);
-        }
+        private bool StationeryItemExists(int id) =>
+            _context.StationeryItems.Any(e => e.ItemId == id);
 
-        // -----------------------
-        // Helper: Populate category dropdown
         private void PopulateCategories(int? selectedCategory = null)
         {
             ViewData["CategoryId"] = new SelectList(_context.Categories, "CategoryId", "CategoryName", selectedCategory);
+        }
+        private int GetCurrentUserId()
+        {
+            if (User.Identity?.IsAuthenticated == true)
+            {
+                var claim = User.Claims.FirstOrDefault(c => c.Type == "EmployeeId");
+                if (claim != null && int.TryParse(claim.Value, out int id))
+                    return id;
+            }
+            return 0;
         }
     }
 }

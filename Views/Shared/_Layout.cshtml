@@ -29,18 +29,33 @@
                     <!-- LEFT MENU -->
                     <ul class="navbar-nav flex-grow-1">
                         <li class="nav-item"><a class="nav-link text-dark" asp-controller="Home" asp-action="Index">Home</a></li>
-                        <li class="nav-item"><a class="nav-link text-dark" asp-controller="Employees" asp-action="Index">Employees</a></li>
-                        <li class="nav-item"><a class="nav-link text-dark" asp-controller="Roles" asp-action="Index">Roles</a></li>
-                        <li class="nav-item"><a class="nav-link text-dark" asp-controller="StationeryItems" asp-action="Index">Stationery Items</a></li>
-                        <li class="nav-item"><a class="nav-link text-dark" asp-controller="StationeryRequests" asp-action="Index">Requests</a></li>
-                        <li class="nav-item"><a class="nav-link text-dark" asp-controller="Notifications" asp-action="Index">Notifications</a></li>
-                        <li class="nav-item"><a class="nav-link text-dark" asp-controller="Reports" asp-action="Index">Reports</a></li>
+
+                        @{
+                            // Get session info
+                            var empId = Context.Session.GetInt32("EmployeeId");
+                            var empRoleId = Context.Session.GetInt32("RoleId"); // store RoleId in session on login
+                        }
+
+                        @* Require login for main menus *@
+                        @if (empId != null)
+                        {
+                            <li class="nav-item"><a class="nav-link text-dark" asp-controller="Employees" asp-action="Index">Employees</a></li>
+                            <li class="nav-item"><a class="nav-link text-dark" asp-controller="StationeryItems" asp-action="Index">Stationery Items</a></li>
+                            <li class="nav-item"><a class="nav-link text-dark" asp-controller="StationeryRequests" asp-action="Index">Requests</a></li>
+                            <li class="nav-item"><a class="nav-link text-dark" asp-controller="Notifications" asp-action="Index">Notifications</a></li>
+                            <li class="nav-item"><a class="nav-link text-dark" asp-controller="Reports" asp-action="Index">Reports</a></li>
+
+                            @* Admin-only menu (RoleId = 1) *@
+                            @if (empRoleId == 1)
+                            {
+                                <li class="nav-item"><a class="nav-link text-dark" asp-controller="Roles" asp-action="Index">Roles</a></li>
+                            }
+                        }
                     </ul>
 
                     <!-- RIGHT SIDE ACCOUNT AREA -->
                     <ul class="navbar-nav">
                         @{
-                            var empId = Context.Session.GetInt32("EmployeeId");
                             var empName = Context.Session.GetString("EmployeeName") ?? "User";
                         }
 
@@ -72,7 +87,6 @@
             </div>
         </nav>
     </header>
-
 
     <div class="container">
         <main role="main" class="pb-3">
