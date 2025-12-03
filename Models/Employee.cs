@@ -9,15 +9,17 @@ namespace StationaryManagement.Models
         public string Name { get; set; } = null!;
         public int RoleId { get; set; }
         public string Email { get; set; } = null!;
-        public string? PasswordHash { get; set; } = null!;
+        public string? PasswordHash { get; set; }
         public string? Location { get; set; }
         public string? Grade { get; set; }
         public bool IsActive { get; set; } = true;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime? ModifiedAt { get; set; }
-        public int? SuperiorId { get; set; }
 
-        // Navigation properties
+        // IMPORTANT CHANGE:
+        public int? SuperiorId { get; set; }   // must be nullable
+
+        // Navigation
         public Role? Role { get; set; }
         public Employee? Superior { get; set; }
         public ICollection<Employee> Subordinates { get; set; } = new List<Employee>();

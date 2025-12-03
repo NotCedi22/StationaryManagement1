@@ -5,14 +5,6 @@ using System.ComponentModel.DataAnnotations;
 namespace StationaryManagement.Models
 {
     // Enum for request status
-    public enum RequestStatus
-    {
-        Pending,
-        Approved,
-        Rejected,
-        Withdrawn,
-        Cancelled
-    }
 
     public class StationeryRequest
     {
@@ -28,8 +20,8 @@ namespace StationaryManagement.Models
         public string? Reason { get; set; }
         public DateTime? LastStatusChangedAt { get; set; }
 
-        // Use enum instead of string for Status
-        public RequestStatus Status { get; set; } = RequestStatus.Pending;
+       
+        public string Status { get; set; } = "Pending";
 
         // Navigation properties
         public Employee? Employee { get; set; }

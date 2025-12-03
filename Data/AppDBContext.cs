@@ -33,55 +33,54 @@ namespace StationaryManagement.Data
                 .HasNoKey()
                 .ToView("vw_FrequentItems");
 
-            // Employee -> Subordinates
+            // FIXED: Employee → Subordinates
             modelBuilder.Entity<Employee>()
-                .HasMany(e => e.Subordinates)
-                .WithOne(e => e.Superior)
+                .HasOne(e => e.Superior)
+                .WithMany(s => s.Subordinates)
                 .HasForeignKey(e => e.SuperiorId)
-                .OnDelete(DeleteBehavior.Restrict);
+                .OnDelete(DeleteBehavior.Restrict); // VERY important
 
-            // Employee -> Requests
+            // Employee → Requests
             modelBuilder.Entity<Employee>()
                 .HasMany(e => e.StationeryRequests)
                 .WithOne(r => r.Employee)
                 .HasForeignKey(r => r.EmployeeId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // Employee -> Notifications
+            // Employee → Notifications
             modelBuilder.Entity<Employee>()
                 .HasMany(e => e.Notifications)
                 .WithOne(n => n.Employee)
                 .HasForeignKey(n => n.EmployeeId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // Precision for decimal fields
+            // Precision fields
             modelBuilder.Entity<RequestItem>().Property(x => x.UnitCost).HasPrecision(18, 2);
             modelBuilder.Entity<StationeryItem>().Property(x => x.UnitCost).HasPrecision(18, 2);
             modelBuilder.Entity<StationeryRequest>().Property(x => x.TotalCost).HasPrecision(18, 2);
             modelBuilder.Entity<RoleThreshold>().Property(x => x.MaxAmount).HasPrecision(18, 2);
             modelBuilder.Entity<FrequentItemView>().Property(x => x.TotalSpent).HasPrecision(18, 2);
 
-            // RoleId is identity
+            // Role identity
             modelBuilder.Entity<Role>().Property(r => r.RoleId).ValueGeneratedOnAdd();
 
-            // Role -> RoleThreshold 1:1
+            // Role → RoleThreshold 1:1
             modelBuilder.Entity<RoleThreshold>()
                 .HasOne(rt => rt.Role)
                 .WithOne(r => r.RoleThreshold)
                 .HasForeignKey<RoleThreshold>(rt => rt.RoleId)
                 .OnDelete(DeleteBehavior.Cascade);
-            modelBuilder.Entity<Role>()
-             .Property(r => r.CanApprove)
-            .HasDefaultValue(false);
-            // -------------------------------
-            // Seed Roles and RoleThresholds
-            // -------------------------------
 
+            modelBuilder.Entity<Role>()
+                .Property(r => r.CanApprove)
+                .HasDefaultValue(false);
+
+            // Seeds
             modelBuilder.Entity<Role>().HasData(
-         new Role { RoleId = 1, RoleName = "Admin", Description = "System Administrator", CanApprove = true },
-         new Role { RoleId = 2, RoleName = "Manager", Description = "Department Manager", CanApprove = true },
-         new Role { RoleId = 3, RoleName = "Employee", Description = "Regular Employee", CanApprove = false }
-     );
+                new Role { RoleId = 1, RoleName = "Admin", Description = "System Administrator", CanApprove = true },
+                new Role { RoleId = 2, RoleName = "Manager", Description = "Department Manager", CanApprove = true },
+                new Role { RoleId = 3, RoleName = "Employee", Description = "Regular Employee", CanApprove = false }
+            );
 
             modelBuilder.Entity<RoleThreshold>().HasData(
                 new RoleThreshold { RoleId = 1, MaxAmount = 999999 },
