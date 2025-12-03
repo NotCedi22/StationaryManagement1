@@ -1,0 +1,47 @@
+﻿@model IEnumerable<StationaryManagement.Models.StationeryItem>
+@using Microsoft.AspNetCore.Mvc.Rendering
+
+@{
+    ViewData["Title"] = "Stationery Items";
+
+    // Safely cast Categories from ViewData
+    var categories = ViewData["Categories"] as SelectList ?? new SelectList(Enumerable.Empty<SelectListItem>());
+    var selectedCategoryId = Context.Request.Query["categoryId"].ToString();
+}
+
+<h2>Stationery Items</h2>
+
+<form method="get" class="mb-3">
+    <label>Filter by Category:</label>
+    <select name="categoryId" class="form-select w-auto d-inline-block">
+        <option value="">All</option>
+        @foreach (var category in categories)
+        {
+            var selected = category.Value == selectedCategoryId ? "selected" : "";
+            <option value="@category.Value" selected="@selected">@category.Text</option>
+        }
+    </select>
+    <button class="btn btn-primary btn-sm">Filter</button>
+</form>
+
+<div class="row row-cols-1 row-cols-md-3 g-4">
+    @foreach (var item in Model)
+    {
+        <div class="col">
+            <div class="card h-100">
+                @if (!string.IsNullOrEmpty(item.ImagePath))
+                {
+                    <img src="~/images/@item.ImagePath" class="card-img-top" alt="@item.ItemName" style="height:200px; object-fit:cover;">
+                }
+                <div class="card-body">
+                    <h5 class="card-title">@item.ItemName</h5>
+                    <p class="card-text">@item.Description</p>
+                    <p class="card-text"><strong>Category:</strong> @item.Category?.CategoryName</p>
+                    <p class="card-text"><strong>Stock:</strong> @item.CurrentStock</p>
+                    <p class="card-text"><strong>Unit Cost:</strong> $@item.UnitCost</p>
+                    <a asp-action="Details" asp-route-id="@item.ItemId" class="btn btn-sm btn-outline-primary">View</a>
+                </div>
+            </div>
+        </div>
+    }
+</div>

@@ -1,0 +1,43 @@
+﻿@model IEnumerable<StationaryManagement.Models.StationeryRequest>
+
+@{
+    ViewData["Title"] = "Stationery Requests";
+}
+
+<h1>Stationery Requests</h1>
+
+<p>
+    <a asp-action="Create" class="btn btn-primary">Create New Request</a>
+</p>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>@Html.DisplayNameFor(model => model.First().RequestId)</th>
+            <th>Employee</th>
+            <th>Superior</th>
+            <th>@Html.DisplayNameFor(model => model.First().Status)</th>
+            <th>@Html.DisplayNameFor(model => model.First().TotalCost)</th>
+            <th>@Html.DisplayNameFor(model => model.First().RequestDate)</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.RequestId</td>
+                <td>@item.Employee?.Name</td>
+                <td>@item.Superior?.Name</td>
+                <td>@item.Status</td>
+                <td>@item.TotalCost</td>
+                <td>@item.RequestDate.ToString("yyyy-MM-dd")</td>
+                <td>
+                    <a asp-action="Edit" asp-route-id="@item.RequestId" class="btn btn-sm btn-warning">Edit</a>
+                    <a asp-action="Details" asp-route-id="@item.RequestId" class="btn btn-sm btn-info">Details</a>
+                    <a asp-action="Delete" asp-route-id="@item.RequestId" class="btn btn-sm btn-danger">Delete</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

@@ -1,0 +1,44 @@
+﻿@model StationaryManagement.Models.StationeryItem
+
+@{
+    ViewData["Title"] = "Delete";
+}
+
+<h1>Delete</h1>
+
+<h3>Are you sure you want to delete this?</h3>
+<div>
+    <h4>StationeryItem</h4>
+    <hr />
+    <dl class="row">
+        <dt class="col-sm-2">@Html.DisplayNameFor(model => model.ItemName)</dt>
+        <dd class="col-sm-10">@Html.DisplayFor(model => model.ItemName)</dd>
+
+        <dt class="col-sm-2">@Html.DisplayNameFor(model => model.Description)</dt>
+        <dd class="col-sm-10">@(Model.Description ?? "N/A")</dd>
+
+        <dt class="col-sm-2">@Html.DisplayNameFor(model => model.UnitCost)</dt>
+        <dd class="col-sm-10">@Html.DisplayFor(model => model.UnitCost)</dd>
+
+        <dt class="col-sm-2">@Html.DisplayNameFor(model => model.CurrentStock)</dt>
+        <dd class="col-sm-10">@Html.DisplayFor(model => model.CurrentStock)</dd>
+
+        <dt class="col-sm-2">@Html.DisplayNameFor(model => model.ImagePath)</dt>
+        <dd class="col-sm-10">@(Model.ImagePath ?? "No Image")</dd>
+
+        <dt class="col-sm-2">@Html.DisplayNameFor(model => model.CreatedAt)</dt>
+        <dd class="col-sm-10">@Html.DisplayFor(model => model.CreatedAt)</dd>
+
+        <dt class="col-sm-2">@Html.DisplayNameFor(model => model.ModifiedAt)</dt>
+        <dd class="col-sm-10">@(Model.ModifiedAt.HasValue? Model.ModifiedAt.Value.ToString() : "N/A")</dd>
+
+        <dt class="col-sm-2">@Html.DisplayNameFor(model => model.Category)</dt>
+        <dd class="col-sm-10">@(Model.Category != null ? Model.Category.CategoryName : "No Category")</dd>
+    </dl>
+
+    <form asp-action="Delete">
+        <input type="hidden" asp-for="ItemId" />
+        <input type="submit" value="Delete" class="btn btn-danger" /> |
+        <a asp-action="Index" class="btn btn-secondary">Back to List</a>
+    </form>
+</div>

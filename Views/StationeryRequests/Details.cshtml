@@ -1,0 +1,42 @@
+﻿@model StationaryManagement.Models.StationeryRequest
+
+@{
+    ViewData["Title"] = "Stationery Request Details";
+}
+
+<h1>Details</h1>
+
+<div>
+    <h4>Request</h4>
+    <hr />
+    <dl class="row">
+        <dt class="col-sm-2">Employee</dt>
+        <dd class="col-sm-10">@Model.Employee?.Name</dd>
+
+        <dt class="col-sm-2">Superior</dt>
+        <dd class="col-sm-10">@Model.Superior?.Name</dd>
+
+        <dt class="col-sm-2">Request Date</dt>
+        <dd class="col-sm-10">@Model.RequestDate.ToString("yyyy-MM-dd")</dd>
+
+        <dt class="col-sm-2">From</dt>
+        <dd class="col-sm-10">@Model.FromDate?.ToString("yyyy-MM-dd")</dd>
+
+        <dt class="col-sm-2">To</dt>
+        <dd class="col-sm-10">@Model.ToDate?.ToString("yyyy-MM-dd")</dd>
+
+        <dt class="col-sm-2">Reason</dt>
+        <dd class="col-sm-10">@Model.Reason</dd>
+
+        <dt class="col-sm-2">Total Cost</dt>
+        <dd class="col-sm-10">@Model.TotalCost</dd>
+
+        <dt class="col-sm-2">Status</dt>
+        <dd class="col-sm-10">@Model.Status</dd>
+    </dl>
+</div>
+
+<div>
+    <a asp-action="Edit" asp-route-id="@Model.RequestId" class="btn btn-warning">Edit</a>
+    <a asp-action="Index" class="btn btn-secondary">Back to List</a>
+</div>

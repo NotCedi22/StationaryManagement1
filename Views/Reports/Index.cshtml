@@ -1,0 +1,30 @@
+﻿@using StationaryManagement1.Models.ViewModels
+@model IEnumerable<FrequentItemView>
+
+@{
+    ViewData["Title"] = "Reports - Frequent Items";
+}
+
+<h2>Frequent Items Report</h2>
+
+<table class="table table-striped table-bordered">
+    <thead class="table-light">
+        <tr>
+            <th>Item</th>
+            <th>Total Requested</th>
+            <th>Requestor Count</th>
+            <th>Total Spent</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.ItemName</td>
+                <td>@item.TotalRequested</td>
+                <td>@item.RequestorCount</td>
+                <td>@item.TotalSpent.ToString("C2")</td>
+            </tr>
+        }
+    </tbody>
+</table>
