@@ -54,15 +54,18 @@ namespace StationaryManagement1.Controllers
 
             if (request == null) return NotFound();
 
-            // Authorization
+            // Authorization: Employees can only view their own requests
             var currentUserId = GetCurrentUserId();
             var currentUserRole = GetCurrentUserRole();
+
             if (currentUserRole == "Employee" && request.EmployeeId != currentUserId)
                 return Forbid();
 
+            // Pass current user's role to the view for UI purposes (Edit button)
+            ViewBag.CurrentUserRole = currentUserRole;
+
             return View(request);
         }
-
         // GET: StationeryRequests/Create
         public IActionResult Create()
         {
@@ -195,10 +198,9 @@ namespace StationaryManagement1.Controllers
             return View(request);
         }
 
-        // POST: StationeryRequests/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, Dictionary<int, int>? Quantities)
+        public async Task<IActionResult> Edit(int id, StationeryRequest model, Dictionary<int, int>? Quantities)
         {
             var request = await _context.StationeryRequests
                 .Include(r => r.RequestItems)
@@ -218,15 +220,20 @@ namespace StationaryManagement1.Controllers
                 return RedirectToAction(nameof(Edit), new { id });
             }
 
+            // Update request details from model
+            request.EmployeeId = model.EmployeeId;
+            request.SuperiorId = model.SuperiorId;
+            request.FromDate = model.FromDate;
+            request.ToDate = model.ToDate;
+            request.Reason = model.Reason;
+
             decimal totalCost = 0;
             var newItems = new List<RequestItem>();
 
             foreach (var q in Quantities)
             {
                 var item = await _context.StationeryItems.FindAsync(q.Key);
-                if (item == null) continue;
-                if (q.Value <= 0) continue;
-
+                if (item == null || q.Value <= 0) continue;
                 if (q.Value > item.CurrentStock)
                 {
                     TempData["Error"] = $"Quantity for {item.ItemName} exceeds stock.";
