@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
-namespace StationaryManagement.Models
+namespace StationaryManagement1.Models
 {
     // Enum for request status
 

@@ -1,9 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using StationaryManagement.Data;
-using StationaryManagement.Models;
+using StationaryManagement1.Data;
+using StationaryManagement1.Models;
 
-namespace StationaryManagement.Controllers
+namespace StationaryManagement1.Controllers
 {
     public class CategoriesController : Controller
     {

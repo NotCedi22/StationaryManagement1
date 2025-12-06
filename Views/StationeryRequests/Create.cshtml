@@ -1,10 +1,10 @@
-﻿@model StationaryManagement.Models.StationeryRequest
+﻿@model StationaryManagement1.Models.StationeryRequest
 
 @{
     ViewData["Title"] = "Create Stationery Request";
     // StationeryItemsDetails contains ItemId, ItemName, CurrentStock, UnitCost
-    var itemsDetails = ViewData["StationeryItemsDetails"] as List<StationaryManagement.Models.ViewModels.StationeryItemViewModel>
-                       ?? new List<StationaryManagement.Models.ViewModels.StationeryItemViewModel>();
+    var itemsDetails = ViewData["StationeryItemsDetails"] as List<StationaryManagement1.Models.ViewModels.StationeryItemViewModel>
+                       ?? new List<StationaryManagement1.Models.ViewModels.StationeryItemViewModel>();
 }
 
 <h1>Create Request</h1>

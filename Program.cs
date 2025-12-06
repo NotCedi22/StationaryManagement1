@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using StationaryManagement.Data;
-using StationaryManagement.Models;
+using StationaryManagement1.Data;
+using StationaryManagement1.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -12,16 +12,16 @@ builder.Services.AddDbContext<AppDBContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
 );
 
-// Session services
+// Session services (1 HOUR EXPIRATION)
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(options =>
 {
-    options.IdleTimeout = TimeSpan.FromMinutes(30);
+    options.IdleTimeout = TimeSpan.FromHours(1);   // 🔥 1 hour
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
 });
 
-// Allow session access in views/controllers
+// Allow session access
 builder.Services.AddHttpContextAccessor();
 
 var app = builder.Build();
@@ -38,12 +38,46 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
-app.UseAuthentication();  // optional but OK
+app.UseAuthentication();
 app.UseAuthorization();
 
-app.UseSession();  // MUST be before routing
+app.UseSession();  // 🔥 MUST be here BEFORE endpoints
 
-// Routing
+// -----------------------------------------
+// AUTO LOGIN FROM COOKIE IF SESSION EMPTY
+// -----------------------------------------
+app.UseHttpsRedirection();
+app.UseStaticFiles();
+
+app.UseSession();  // session must be BEFORE this middleware
+
+// Restore session from remember-me cookies
+app.Use(async (context, next) =>
+{
+    if (context.Session.GetInt32("EmployeeId") == null)
+    {
+        var userIdCookie = context.Request.Cookies["RememberEmployeeId"];
+        var nameCookie = context.Request.Cookies["RememberEmployeeName"];
+        var roleCookie = context.Request.Cookies["RememberRoleId"];
+
+        if (!string.IsNullOrEmpty(userIdCookie) &&
+            !string.IsNullOrEmpty(nameCookie) &&
+            !string.IsNullOrEmpty(roleCookie))
+        {
+            context.Session.SetInt32("EmployeeId", int.Parse(userIdCookie));
+            context.Session.SetString("EmployeeName", nameCookie);
+            context.Session.SetInt32("RoleId", int.Parse(roleCookie));
+        }
+    }
+
+    await next.Invoke();
+});
+
+app.UseRouting();
+app.UseAuthentication();
+app.UseAuthorization();
+
+// normal MVC routing
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}"
@@ -66,8 +100,9 @@ using (var scope = app.Services.CreateScope())
             {
                 Name = "Admin",
                 Email = "admin@example.com",
-                PasswordHash = "admin123",  // Or hashed later
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword("admin123"),
                 RoleId = adminRole.RoleId,
+                CreatedAt = DateTime.UtcNow,
                 IsActive = true
             });
 

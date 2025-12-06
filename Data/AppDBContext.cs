@@ -1,8 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using StationaryManagement.Models;
+using StationaryManagement1.Models; // <-- FIXED: Use correct namespace for models
 using StationaryManagement1.Models.ViewModels;
 
-namespace StationaryManagement.Data
+namespace StationaryManagement1.Data
 {
     public class AppDBContext : DbContext
     {
@@ -33,12 +33,12 @@ namespace StationaryManagement.Data
                 .HasNoKey()
                 .ToView("vw_FrequentItems");
 
-            // FIXED: Employee → Subordinates
+            // Employee → Subordinates
             modelBuilder.Entity<Employee>()
                 .HasOne(e => e.Superior)
                 .WithMany(s => s.Subordinates)
                 .HasForeignKey(e => e.SuperiorId)
-                .OnDelete(DeleteBehavior.Restrict); // VERY important
+                .OnDelete(DeleteBehavior.Restrict);
 
             // Employee → Requests
             modelBuilder.Entity<Employee>()

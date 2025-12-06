@@ -1,5 +1,5 @@
-﻿namespace StationaryManagement.Models;
-using StationaryManagement.Models;
+﻿namespace StationaryManagement1.Models;
+
 using System.ComponentModel.DataAnnotations;
 public class StationeryItem
 {

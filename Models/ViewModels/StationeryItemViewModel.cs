@@ -1,4 +1,4 @@
-﻿namespace StationaryManagement.Models.ViewModels
+﻿namespace StationaryManagement1.Models.ViewModels
 {
     public class StationeryItemViewModel
     {

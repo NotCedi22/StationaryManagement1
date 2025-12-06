@@ -1,7 +1,10 @@
-﻿@model IEnumerable<StationaryManagement.Models.StationeryRequest>
+﻿@model IEnumerable<StationaryManagement1.Models.StationeryRequest>
 
 @{
     ViewData["Title"] = "Stationery Requests";
+
+    var currentUserId = (int?)ViewData["CurrentUserId"];
+    var currentUserRole = (string?)ViewData["CurrentUserRole"];
 }
 
 <h1>Stationery Requests</h1>
@@ -13,12 +16,12 @@
 <table class="table table-striped">
     <thead>
         <tr>
-            <th>@Html.DisplayNameFor(model => model.First().RequestId)</th>
+            <th>ID</th>
             <th>Employee</th>
             <th>Superior</th>
-            <th>@Html.DisplayNameFor(model => model.First().Status)</th>
-            <th>@Html.DisplayNameFor(model => model.First().TotalCost)</th>
-            <th>@Html.DisplayNameFor(model => model.First().RequestDate)</th>
+            <th>Status</th>
+            <th>Total Cost</th>
+            <th>Request Date</th>
             <th>Actions</th>
         </tr>
     </thead>
@@ -30,16 +33,37 @@
                 <td>@item.Employee?.Name</td>
                 <td>@item.Superior?.Name</td>
                 <td>@item.Status</td>
-                <td>@item.TotalCost</td>
-                <td>@item.RequestDate.ToString("yyyy-MM-dd")</td>
+                <td>@item.TotalCost.ToString("C")</td>
+                <td>@item.RequestDate.ToLocalTime().ToString("g")</td>
                 <td>
-                    <a asp-action="Edit" asp-route-id="@item.RequestId" class="btn btn-sm btn-warning">Edit</a>
                     <a asp-action="Details" asp-route-id="@item.RequestId" class="btn btn-sm btn-info">Details</a>
 
-                    <form asp-action="Delete" asp-route-id="@item.RequestId" method="post" style="display:inline">
-                        @Html.AntiForgeryToken()
-                        <button type="submit" class="btn btn-sm btn-danger">Delete</button>
-                    </form>
+                    @* Admin/Manager actions *@
+                    @if (currentUserRole == "Admin" || currentUserRole == "Manager")
+                    {
+                        <a asp-action="Edit" asp-route-id="@item.RequestId" class="btn btn-sm btn-warning">Edit</a>
+                        <form asp-action="Delete" asp-route-id="@item.RequestId" method="post" style="display:inline">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                        </form>
+
+                        @if (item.Status == "Pending")
+                        {
+                            <form asp-action="Approve" asp-route-id="@item.RequestId" method="post" style="display:inline">
+                                <button type="submit" class="btn btn-sm btn-success">Approve</button>
+                            </form>
+                            <form asp-action="Reject" asp-route-id="@item.RequestId" method="post" style="display:inline">
+                                <button type="submit" class="btn btn-sm btn-secondary">Reject</button>
+                            </form>
+                        }
+                    }
+                    @* Employee withdraw action *@
+                    else if (currentUserRole == "Employee" && item.EmployeeId == currentUserId && item.Status == "Pending")
+                    {
+                        <form asp-action="Withdraw" asp-route-id="@item.RequestId" method="post" style="display:inline">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Withdraw</button>
+                        </form>
+                    }
                 </td>
             </tr>
         }

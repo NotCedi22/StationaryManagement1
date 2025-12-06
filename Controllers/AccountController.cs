@@ -1,9 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using StationaryManagement.Data;
-using StationaryManagement.Models;
+using StationaryManagement1.Data;
 
-namespace StationaryManagement.Controllers
+
+namespace StationaryManagement1.Controllers
 {
     public class AccountController : Controller
     {
@@ -18,7 +18,7 @@ namespace StationaryManagement.Controllers
         [HttpGet] public IActionResult Register() => View();
 
         [HttpPost]
-        public async Task<IActionResult> Register(Employee model, string password)
+        public async Task<IActionResult> Register(StationaryManagement1.Models.Employee model, string password)
         {
             if (!ModelState.IsValid) return View(model);
 
@@ -64,34 +64,26 @@ namespace StationaryManagement.Controllers
                 return RedirectToAction("Login");
             }
 
-            // Save session
+            // Save session values
             HttpContext.Session.SetInt32("EmployeeId", user.EmployeeId);
             HttpContext.Session.SetString("EmployeeName", user.Name);
             HttpContext.Session.SetInt32("RoleId", user.RoleId);
 
+            // REMEMBER ME (store cookies)
             if (rememberMe)
             {
-                Response.Cookies.Append("RememberEmployeeId", user.EmployeeId.ToString(), new CookieOptions
+                var cookieOptions = new CookieOptions
                 {
                     Expires = DateTime.UtcNow.AddDays(30),
                     HttpOnly = true,
-                    Secure = true,
-                    IsEssential = true
-                });
-                Response.Cookies.Append("RememberEmployeeName", user.Name, new CookieOptions
-                {
-                    Expires = DateTime.UtcNow.AddDays(30),
-                    HttpOnly = true,
-                    Secure = true,
-                    IsEssential = true
-                });
-                Response.Cookies.Append("RememberRoleId", user.RoleId.ToString(), new CookieOptions
-                {
-                    Expires = DateTime.UtcNow.AddDays(30),
-                    HttpOnly = true,
-                    Secure = true,
-                    IsEssential = true
-                });
+                    Secure = Request.IsHttps,
+                    IsEssential = true,
+                    Path = "/"
+                };
+
+                Response.Cookies.Append("RememberEmployeeId", user.EmployeeId.ToString(), cookieOptions);
+                Response.Cookies.Append("RememberEmployeeName", user.Name, cookieOptions);
+                Response.Cookies.Append("RememberRoleId", user.RoleId.ToString(), cookieOptions);
             }
 
             TempData["Success"] = "Login successful!";
@@ -112,7 +104,8 @@ namespace StationaryManagement.Controllers
         [HttpGet]
         public IActionResult ChangePassword()
         {
-            if (HttpContext.Session.GetInt32("EmployeeId") == null) return RedirectToAction("Login");
+            if (HttpContext.Session.GetInt32("EmployeeId") == null)
+                return RedirectToAction("Login");
             return View();
         }
 
@@ -137,6 +130,22 @@ namespace StationaryManagement.Controllers
 
             TempData["Success"] = "Password changed successfully!";
             return RedirectToAction("Index", "Home");
+        }
+
+        public IActionResult TestCookie()
+        {
+            var cookieOptions = new CookieOptions
+            {
+                Expires = DateTime.UtcNow.AddDays(30),
+                HttpOnly = true,
+                Secure = Request.IsHttps,
+                IsEssential = true,
+                Path = "/"
+            };
+
+            Response.Cookies.Append("TestCookie", "HelloWorld", cookieOptions);
+
+            return Content("TestCookie set!");
         }
     }
 }

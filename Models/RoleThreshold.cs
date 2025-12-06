@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace StationaryManagement.Models
+namespace StationaryManagement1.Models
 {
     public class RoleThreshold
     {

@@ -1,9 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using StationaryManagement.Data;
-using StationaryManagement.Models;
+using StationaryManagement1.Data;
+using StationaryManagement1.Models;
 using BCrypt.Net;
 
-namespace StationaryManagement.Controllers
+namespace StationaryManagement1.Controllers
 {
     public class AdminController : Controller
     {

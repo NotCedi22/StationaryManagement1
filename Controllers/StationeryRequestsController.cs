@@ -1,16 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using StationaryManagement.Data;
-using StationaryManagement.Models;
-using StationaryManagement.Models.ViewModels;
+using StationaryManagement1.Data;
+using StationaryManagement1.Models;
+using StationaryManagement1.Models.ViewModels;
 
-
-namespace StationaryManagement.Controllers
+namespace StationaryManagement1.Controllers
 {
     public class StationeryRequestsController : Controller
     {
@@ -27,6 +22,9 @@ namespace StationaryManagement.Controllers
             var currentUserId = GetCurrentUserId();
             var currentUserRole = GetCurrentUserRole();
 
+            ViewData["CurrentUserId"] = currentUserId;
+            ViewData["CurrentUserRole"] = currentUserRole;
+
             var query = _context.StationeryRequests
                 .Include(r => r.Employee)
                 .Include(r => r.Superior)
@@ -37,8 +35,10 @@ namespace StationaryManagement.Controllers
             if (currentUserRole == "Employee")
                 query = query.Where(r => r.EmployeeId == currentUserId);
 
-            return View(await query.ToListAsync());
+            var requests = await query.OrderByDescending(r => r.RequestDate).ToListAsync();
+            return View(requests);
         }
+
 
         // GET: StationeryRequests/Details/5
         public async Task<IActionResult> Details(int? id)
@@ -66,104 +66,100 @@ namespace StationaryManagement.Controllers
         // GET: StationeryRequests/Create
         public IActionResult Create()
         {
-            PopulateEmployeesAndSuperiorsDropDown();
+            var currentUserId = GetCurrentUserId();
+            if (currentUserId == 0) return RedirectToAction("Login", "Account");
 
-            // Pass StationeryItems with stock and cost
+            PopulateEmployeesAndSuperiorsDropDown(currentUserId);
+
+            // Pass StationeryItems for selection
             var items = _context.StationeryItems
                 .Select(i => new StationeryItemViewModel
                 {
                     ItemId = i.ItemId,
                     ItemName = i.ItemName,
                     CurrentStock = i.CurrentStock,
-                    UnitCost = i.UnitCost
+                    UnitCost = i.UnitCost,
+                    SelectedQuantity = i.CurrentStock > 0 ? 1 : 0
                 }).ToList();
 
             ViewData["StationeryItemsDetails"] = items;
-
             return View();
         }
 
         // POST: StationeryRequests/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(StationeryRequest request, Dictionary<int, int>? Quantities)
+        public async Task<IActionResult> Create(Dictionary<int, int> Quantities, int SuperiorId, DateTime? FromDate, DateTime? ToDate, string Reason)
         {
             var currentUserId = GetCurrentUserId();
-            request.EmployeeId = currentUserId;
-            request.Status = request.Status = "Pending";
+            if (currentUserId == 0) return RedirectToAction("Login", "Account");
 
-
-            if (ModelState.IsValid)
+            if (Quantities == null || !Quantities.Any())
             {
-                // Calculate total cost based on quantities
-                decimal totalCost = 0;
-                var requestItems = new List<RequestItem>();
-
-                if (Quantities != null)
-                {
-                    foreach (var q in Quantities)
-                    {
-                        var item = await _context.StationeryItems.FindAsync(q.Key);
-                        if (item == null) continue;
-
-                        if (q.Value > item.CurrentStock)
-                        {
-                            ModelState.AddModelError("", $"Quantity for {item.ItemName} exceeds stock.");
-                            PopulateEmployeesAndSuperiorsDropDown(request.EmployeeId, request.SuperiorId);
-                            var itemsDetails = _context.StationeryItems
-                                .Select(i => new StationeryItemViewModel
-                                {
-                                    ItemId = i.ItemId,
-                                    ItemName = i.ItemName,
-                                    CurrentStock = i.CurrentStock,
-                                    UnitCost = i.UnitCost
-                                }).ToList();
-                            ViewData["StationeryItemsDetails"] = itemsDetails;
-                            return View(request);
-                        }
-
-                        requestItems.Add(new RequestItem
-                        {
-                            ItemId = q.Key,
-                            Quantity = q.Value,
-                            UnitCost = item.UnitCost
-                        });
-
-                        totalCost += q.Value * item.UnitCost;
-                    }
-                }
-
-                request.TotalCost = totalCost;
-
-                _context.StationeryRequests.Add(request);
-                await _context.SaveChangesAsync();
-
-                // Save request items
-                foreach (var ri in requestItems)
-                {
-                    ri.RequestId = request.RequestId;
-                    _context.RequestItems.Add(ri);
-                }
-
-                await _context.SaveChangesAsync();
-
-                return RedirectToAction(nameof(Index));
+                TempData["Error"] = "Select at least one item.";
+                return RedirectToAction(nameof(Create));
             }
 
-            PopulateEmployeesAndSuperiorsDropDown(request.EmployeeId, request.SuperiorId);
+            decimal totalCost = 0;
+            var requestItems = new List<RequestItem>();
 
-            var itemsDetailsFallback = _context.StationeryItems
-                .Select(i => new StationeryItemViewModel
+            foreach (var q in Quantities)
+            {
+                var item = await _context.StationeryItems.FindAsync(q.Key);
+                if (item == null) continue;
+                if (q.Value <= 0) continue;
+
+                if (q.Value > item.CurrentStock)
                 {
-                    ItemId = i.ItemId,
-                    ItemName = i.ItemName,
-                    CurrentStock = i.CurrentStock,
-                    UnitCost = i.UnitCost
-                }).ToList();
-            ViewData["StationeryItemsDetails"] = itemsDetailsFallback;
+                    TempData["Error"] = $"Quantity for {item.ItemName} exceeds stock.";
+                    return RedirectToAction(nameof(Create));
+                }
 
-            return View(request);
+                requestItems.Add(new RequestItem
+                {
+                    ItemId = item.ItemId,
+                    Quantity = q.Value,
+                    UnitCost = item.UnitCost
+                });
+
+                totalCost += q.Value * item.UnitCost;
+            }
+
+            if (!requestItems.Any())
+            {
+                TempData["Error"] = "You must select at least one item.";
+                return RedirectToAction(nameof(Create));
+            }
+
+            var request = new StationeryRequest
+            {
+                EmployeeId = currentUserId,
+                SuperiorId = SuperiorId,
+                FromDate = FromDate,
+                ToDate = ToDate,
+                Reason = Reason,
+                RequestItems = requestItems,
+                TotalCost = totalCost,
+                Status = "Pending",
+                RequestDate = DateTime.UtcNow
+            };
+
+            _context.StationeryRequests.Add(request);
+            await _context.SaveChangesAsync();
+
+            // Save RequestItems
+            foreach (var ri in requestItems)
+            {
+                ri.RequestId = request.RequestId;
+                _context.RequestItems.Add(ri);
+            }
+
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = "Request created successfully!";
+            return RedirectToAction(nameof(Index));
         }
+
         // GET: StationeryRequests/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
@@ -176,13 +172,14 @@ namespace StationaryManagement.Controllers
 
             if (request == null) return NotFound();
 
-            // Populate dropdowns
+            var currentUserId = GetCurrentUserId();
+            var currentUserRole = GetCurrentUserRole();
+
+            if (currentUserRole == "Employee" && request.EmployeeId != currentUserId)
+                return Forbid();
+
             PopulateEmployeesAndSuperiorsDropDown(request.EmployeeId, request.SuperiorId);
 
-            // Bring request items into memory
-            var requestItems = request.RequestItems.ToList();
-
-            // Use AsEnumerable() to allow null-propagation
             var itemsDetails = _context.StationeryItems
                 .AsEnumerable()
                 .Select(i => new StationeryItemViewModel
@@ -191,110 +188,69 @@ namespace StationaryManagement.Controllers
                     ItemName = i.ItemName,
                     CurrentStock = i.CurrentStock,
                     UnitCost = i.UnitCost,
-                    SelectedQuantity = requestItems.FirstOrDefault(ri => ri.ItemId == i.ItemId)?.Quantity ?? 0
+                    SelectedQuantity = request.RequestItems.FirstOrDefault(ri => ri.ItemId == i.ItemId)?.Quantity ?? 0
                 }).ToList();
 
             ViewData["StationeryItemsDetails"] = itemsDetails;
-
             return View(request);
         }
 
         // POST: StationeryRequests/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, StationeryRequest request, Dictionary<int, int>? Quantities)
+        public async Task<IActionResult> Edit(int id, Dictionary<int, int>? Quantities)
         {
-            if (id != request.RequestId)
-                return BadRequest();
+            var request = await _context.StationeryRequests
+                .Include(r => r.RequestItems)
+                .FirstOrDefaultAsync(r => r.RequestId == id);
 
-            if (ModelState.IsValid)
+            if (request == null) return NotFound();
+
+            var currentUserId = GetCurrentUserId();
+            var currentUserRole = GetCurrentUserRole();
+
+            if (currentUserRole == "Employee" && request.EmployeeId != currentUserId)
+                return Forbid();
+
+            if (Quantities == null || !Quantities.Any())
             {
-                try
-                {
-                    decimal totalCost = 0;
-                    var requestItems = new List<RequestItem>();
-
-                    if (Quantities != null)
-                    {
-                        foreach (var q in Quantities)
-                        {
-                            var item = await _context.StationeryItems.FindAsync(q.Key);
-                            if (item == null) continue;
-
-                            if (q.Value > item.CurrentStock)
-                            {
-                                ModelState.AddModelError("", $"Quantity for {item.ItemName} exceeds stock.");
-                                PopulateEmployeesAndSuperiorsDropDown(request.EmployeeId, request.SuperiorId);
-
-                                // Rebuild itemsDetails with SelectedQuantity
-                                var itemsDetails = _context.StationeryItems
-                                    .AsEnumerable()
-                                    .Select(i => new StationeryItemViewModel
-                                    {
-                                        ItemId = i.ItemId,
-                                        ItemName = i.ItemName,
-                                        CurrentStock = i.CurrentStock,
-                                        UnitCost = i.UnitCost,
-                                        SelectedQuantity = Quantities.ContainsKey(i.ItemId) ? Quantities[i.ItemId] : 0
-                                    }).ToList();
-
-                                ViewData["StationeryItemsDetails"] = itemsDetails;
-                                return View(request);
-                            }
-
-                            requestItems.Add(new RequestItem
-                            {
-                                RequestId = request.RequestId,
-                                ItemId = q.Key,
-                                Quantity = q.Value,
-                                UnitCost = item.UnitCost
-                            });
-
-                            totalCost += q.Value * item.UnitCost;
-                        }
-                    }
-
-                    request.TotalCost = totalCost;
-
-                    // Remove old RequestItems and add updated
-                    var oldItems = _context.RequestItems.Where(ri => ri.RequestId == id);
-                    _context.RequestItems.RemoveRange(oldItems);
-                    await _context.SaveChangesAsync();
-
-                    _context.RequestItems.AddRange(requestItems);
-
-                    // Update request
-                    _context.Update(request);
-                    await _context.SaveChangesAsync();
-
-                    return RedirectToAction(nameof(Index));
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!_context.StationeryRequests.Any(e => e.RequestId == id))
-                        return NotFound();
-                    else
-                        throw;
-                }
+                TempData["Error"] = "Select at least one item.";
+                return RedirectToAction(nameof(Edit), new { id });
             }
 
-            PopulateEmployeesAndSuperiorsDropDown(request.EmployeeId, request.SuperiorId);
+            decimal totalCost = 0;
+            var newItems = new List<RequestItem>();
 
-            // Rebuild itemsDetails for validation errors
-            var fallbackItems = _context.StationeryItems
-                .AsEnumerable()
-                .Select(i => new StationeryItemViewModel
+            foreach (var q in Quantities)
+            {
+                var item = await _context.StationeryItems.FindAsync(q.Key);
+                if (item == null) continue;
+                if (q.Value <= 0) continue;
+
+                if (q.Value > item.CurrentStock)
                 {
-                    ItemId = i.ItemId,
-                    ItemName = i.ItemName,
-                    CurrentStock = i.CurrentStock,
-                    UnitCost = i.UnitCost,
-                    SelectedQuantity = Quantities?.ContainsKey(i.ItemId) == true ? Quantities[i.ItemId] : 0
-                }).ToList();
+                    TempData["Error"] = $"Quantity for {item.ItemName} exceeds stock.";
+                    return RedirectToAction(nameof(Edit), new { id });
+                }
 
-            ViewData["StationeryItemsDetails"] = fallbackItems;
+                newItems.Add(new RequestItem
+                {
+                    RequestId = request.RequestId,
+                    ItemId = item.ItemId,
+                    Quantity = q.Value,
+                    UnitCost = item.UnitCost
+                });
 
-            return View(request);
+                totalCost += q.Value * item.UnitCost;
+            }
+
+            request.TotalCost = totalCost;
+
+            _context.RequestItems.RemoveRange(request.RequestItems);
+            _context.RequestItems.AddRange(newItems);
+
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(Index));
         }
 
         // POST: StationeryRequests/Delete/5
@@ -307,22 +263,16 @@ namespace StationaryManagement.Controllers
                 .FirstOrDefaultAsync(r => r.RequestId == id);
 
             if (request == null) return NotFound();
+            if (request.Status != "Pending") return BadRequest("Only pending requests can be deleted.");
 
-            // Optional: only allow deletion if Pending
-            if (request.Status != "Pending")
-                return BadRequest("Only pending requests can be deleted.");
-
-            // Remove associated request items first
             _context.RequestItems.RemoveRange(request.RequestItems);
-
-            // Remove the request
             _context.StationeryRequests.Remove(request);
-
             await _context.SaveChangesAsync();
 
             return RedirectToAction(nameof(Index));
         }
-        // POST: StationeryRequests/Approve/5
+
+        // POST: Approve
         [HttpPost]
         public async Task<IActionResult> Approve(int id)
         {
@@ -336,25 +286,19 @@ namespace StationaryManagement.Controllers
             var role = GetCurrentUserRole();
             if (role != "Manager" && role != "Admin") return Forbid();
 
-            request.Status = request.Status = "Approved";
-
+            request.Status = "Approved";
             request.LastStatusChangedAt = DateTime.UtcNow;
 
-            // Reduce stock
             foreach (var ri in request.RequestItems)
             {
-                if (ri.Item != null)
-                {
-                    ri.Item.CurrentStock -= ri.Quantity;
-                }
+                if (ri.Item != null) ri.Item.CurrentStock -= ri.Quantity;
             }
 
             await _context.SaveChangesAsync();
-
             return RedirectToAction(nameof(Index));
         }
 
-        // POST: StationeryRequests/Reject/5
+        // POST: Reject
         [HttpPost]
         public async Task<IActionResult> Reject(int id)
         {
@@ -364,15 +308,14 @@ namespace StationaryManagement.Controllers
             var role = GetCurrentUserRole();
             if (role != "Manager" && role != "Admin") return Forbid();
 
-            request.Status = request.Status = "Rejected";
-
+            request.Status = "Rejected";
             request.LastStatusChangedAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
 
             return RedirectToAction(nameof(Index));
         }
 
-        // POST: StationeryRequests/Withdraw/5
+        // POST: Withdraw
         [HttpPost]
         public async Task<IActionResult> Withdraw(int id)
         {
@@ -381,9 +324,7 @@ namespace StationaryManagement.Controllers
 
             var currentUserId = GetCurrentUserId();
             if (request.EmployeeId != currentUserId) return Forbid();
-
-            if (request.Status != "Pending")
-                return BadRequest("Cannot withdraw request that is already processed.");
+            if (request.Status != "Pending") return BadRequest("Cannot withdraw processed request.");
 
             request.Status = "Withdrawn";
             request.LastStatusChangedAt = DateTime.UtcNow;
@@ -392,44 +333,38 @@ namespace StationaryManagement.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        // GET: Notifications page (Admin/Manager only)
-        public async Task<IActionResult> Notifications()
-        {
-            var role = GetCurrentUserRole();
-            if (role != "Manager" && role != "Admin") return Forbid();
-
-            var requests = await _context.StationeryRequests
-                .Include(r => r.Employee)
-                .Include(r => r.Superior)
-                .Where(r => r.Status == "Pending")
-                .OrderByDescending(r => r.RequestDate)
-                .ToListAsync();
-
-            return View(requests);
-        }
-
-        // Combined Employees + Superiors dropdown
+        // Helpers for dropdowns
         private void PopulateEmployeesAndSuperiorsDropDown(int? selectedEmployee = null, int? selectedSuperior = null)
         {
             var employees = _context.Employees
-                .Include(e => e.Role)
-                .Where(e => e.Role != null && !e.Role.CanApprove)
-                .Select(e => new { e.EmployeeId, DisplayName = e.Name })
+                .Where(e => e.RoleId == 3) // Only employees
+                .Select(e => new { e.EmployeeId, e.Name })
                 .ToList();
-
-            ViewData["EmployeeId"] = new SelectList(employees, "EmployeeId", "DisplayName", selectedEmployee);
+            ViewData["EmployeeId"] = new SelectList(employees, "EmployeeId", "Name", selectedEmployee);
 
             var superiors = _context.Employees
-                .Include(e => e.Role)
-                .Where(e => e.Role != null && e.Role.CanApprove)
-                .Select(e => new { e.EmployeeId, DisplayName = e.Name })
+                .Where(e => e.RoleId == 1 || e.RoleId == 2) // Admin/Manager
+                .Select(e => new { e.EmployeeId, e.Name })
                 .ToList();
-
-            ViewData["SuperiorId"] = new SelectList(superiors, "EmployeeId", "DisplayName", selectedSuperior);
+            ViewData["SuperiorId"] = new SelectList(superiors, "EmployeeId", "Name", selectedSuperior);
         }
 
-        // Auth helpers (replace with real auth)
-        private int GetCurrentUserId() => 1;
-        private string GetCurrentUserRole() => "Employee";
+        // Auth helpers
+        private int GetCurrentUserId()
+        {
+            return HttpContext.Session.GetInt32("EmployeeId") ?? 0;
+        }
+
+        private string GetCurrentUserRole()
+        {
+            var roleId = HttpContext.Session.GetInt32("RoleId");
+            return roleId switch
+            {
+                1 => "Admin",
+                2 => "Manager",
+                3 => "Employee",
+                _ => "Guest"
+            };
+        }
     }
 }
