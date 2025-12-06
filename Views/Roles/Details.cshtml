@@ -1,20 +1,38 @@
 ﻿@model StationaryManagement1.Models.Role
+@using Microsoft.AspNetCore.Http;
 
 @{
     ViewData["Title"] = "Role Details";
+    var roleId = Context.Session.GetInt32("RoleId");
 }
 
-<h1>Role Details</h1>
+<h1 class="mb-3">Role Details</h1>
 
-<div class="card p-3 mb-3">
+<div class="card p-3 mb-3 shadow-sm">
     <dl class="row">
-        <dt class="col-sm-2">@Html.DisplayNameFor(model => model.RoleName)</dt>
-        <dd class="col-sm-10">@Html.DisplayFor(model => model.RoleName)</dd>
+        <dt class="col-sm-3 fw-bold">@Html.DisplayNameFor(model => model.RoleName)</dt>
+        <dd class="col-sm-9">@Html.DisplayFor(model => model.RoleName)</dd>
 
-        <dt class="col-sm-2">@Html.DisplayNameFor(model => model.Description)</dt>
-        <dd class="col-sm-10">@Html.DisplayFor(model => model.Description)</dd>
+        <dt class="col-sm-3 fw-bold">@Html.DisplayNameFor(model => model.Description)</dt>
+        <dd class="col-sm-9">@Html.DisplayFor(model => model.Description)</dd>
+
+        <dt class="col-sm-3 fw-bold">Eligibility Limit (QR)</dt>
+        <dd class="col-sm-9">
+            @(Model.RoleThreshold != null
+                        ? Model.RoleThreshold.MaxAmount.ToString("N2")
+                        : "-")
+        </dd>
+
+        <dt class="col-sm-3 fw-bold">Approval Permission</dt>
+        <dd class="col-sm-9">
+            @(Model.CanApprove ? "✔ Can Approve Requests" : "❌ Cannot Approve")
+        </dd>
     </dl>
 </div>
 
-<a asp-action="Edit" asp-route-id="@Model.RoleId" class="btn btn-warning">Edit</a>
-<a asp-action="Index" class="btn btn-secondary ms-2">Back to List</a>
+@if (roleId == 1)
+{
+    <a asp-action="Edit" asp-route-id="@Model.RoleId" class="btn btn-warning me-2">✏ Edit Role</a>
+}
+
+<a asp-action="Index" class="btn btn-secondary">⬅ Back to List</a>

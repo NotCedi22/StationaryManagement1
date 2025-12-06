@@ -31,15 +31,13 @@
                         <li class="nav-item"><a class="nav-link text-dark" asp-controller="Home" asp-action="Index">Home</a></li>
 
                         @{
-                            // Get session info
                             var empId = Context.Session.GetInt32("EmployeeId");
-                            var empRoleId = Context.Session.GetInt32("RoleId"); // store RoleId in session on login
+                            var empRoleId = Context.Session.GetInt32("RoleId");
                         }
 
-                        @* Require login for main menus *@
                         @if (empId != null)
                         {
-                            @* Employees link visible only to Admin (1) and Manager (2) *@
+                            @* Employees: Admin + Manager *@
                             @if (empRoleId == 1 || empRoleId == 2)
                             {
                                 <li class="nav-item"><a class="nav-link text-dark" asp-controller="Employees" asp-action="Index">Employees</a></li>
@@ -47,30 +45,26 @@
 
                             <li class="nav-item"><a class="nav-link text-dark" asp-controller="StationeryItems" asp-action="Index">Stationery Items</a></li>
 
-                            @* Notifications visible only to Admin (1) and Manager (2) *@
+                            @* Notifications: Admin + Manager *@
                             @if (empRoleId == 1 || empRoleId == 2)
                             {
                                 <li class="nav-item"><a class="nav-link text-dark" asp-controller="Notifications" asp-action="Index">Notifications</a></li>
                             }
 
-                            @* Requests visible to all logged-in users *@
                             <li class="nav-item"><a class="nav-link text-dark" asp-controller="StationeryRequests" asp-action="Index">Requests</a></li>
 
-                            @* Reports link visible only to Admin (1) and Manager (2) *@
+                            @* Reports: Admin + Manager *@
                             @if (empRoleId == 1 || empRoleId == 2)
                             {
                                 <li class="nav-item"><a class="nav-link text-dark" asp-controller="Reports" asp-action="Index">Reports</a></li>
                             }
 
-                            @* Admin-only menu (RoleId = 1) *@
-                            @if (empRoleId == 1)
-                            {
-                                <li class="nav-item"><a class="nav-link text-dark" asp-controller="Roles" asp-action="Index">Roles</a></li>
-                            }
+                            @* 🔥 NEW: All logged users can see Roles *@
+                            <li class="nav-item"><a class="nav-link text-dark" asp-controller="Roles" asp-action="Index">Roles</a></li>
                         }
                     </ul>
 
-                    <!-- RIGHT SIDE ACCOUNT AREA -->
+                    @* RIGHT: User info *@
                     <ul class="navbar-nav">
                         @{
                             var empName = Context.Session.GetString("EmployeeName") ?? "User";
@@ -78,19 +72,13 @@
 
                         @if (empId == null)
                         {
-                            <!-- NOT LOGGED IN -->
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" asp-controller="Account" asp-action="Login">Login</a>
-                            </li>
+                            <li class="nav-item"><a class="nav-link text-dark" asp-controller="Account" asp-action="Login">Login</a></li>
                         }
                         else
                         {
-                            <!-- LOGGED IN -->
                             <li class="nav-item dropdown">
                                 <a class="nav-link dropdown-toggle text-dark" href="#" id="accountDropdown"
-                                   role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                    @empName
-                                </a>
+                                   role="button" data-bs-toggle="dropdown" aria-expanded="false">@empName</a>
 
                                 <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="accountDropdown">
                                     <li><a class="dropdown-item" asp-controller="Account" asp-action="ChangePassword">Change Password</a></li>
@@ -99,7 +87,6 @@
                             </li>
                         }
                     </ul>
-
                 </div>
             </div>
         </nav>

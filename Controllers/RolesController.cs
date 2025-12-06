@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using StationaryManagement1.Data;
 using StationaryManagement1.Models;
@@ -19,10 +14,30 @@ namespace StationaryManagement1.Controllers
             _context = context;
         }
 
+        private bool IsAdmin()
+        {
+            return HttpContext.Session.GetInt32("RoleId") == 1;
+        }
+
+        private string GetCurrentUserRole()
+        {
+            var roleId = HttpContext.Session.GetInt32("RoleId");
+            return roleId switch
+            {
+                1 => "Admin",
+                2 => "Manager",
+                3 => "Employee",
+                _ => "Guest"
+            };
+        }
+
         // GET: Roles
         public async Task<IActionResult> Index()
         {
-            return View(await _context.Roles.ToListAsync());
+            ViewBag.CurrentUserRole = GetCurrentUserRole();
+            return View(await _context.Roles
+    .Include(r => r.RoleThreshold)
+    .ToListAsync());
         }
 
         // GET: Roles/Details/5
@@ -31,76 +46,119 @@ namespace StationaryManagement1.Controllers
             if (id == null) return NotFound();
 
             var role = await _context.Roles
-                .FirstOrDefaultAsync(m => m.RoleId == id);
+    .Include(r => r.RoleThreshold)
+    .FirstOrDefaultAsync(m => m.RoleId == id);
             if (role == null) return NotFound();
 
+            ViewBag.CurrentUserRole = GetCurrentUserRole();
             return View(role);
         }
 
         // GET: Roles/Create
         public IActionResult Create()
         {
+            if (!IsAdmin())
+                return RedirectToAction("AccessDenied", "Account");
+
+            ViewBag.CurrentUserRole = GetCurrentUserRole();
             return View();
         }
 
         // POST: Roles/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("RoleName,Description,CanApprove")] Role role)
+        public async Task<IActionResult> Create(Role role)
         {
-            if (ModelState.IsValid)
-            {
-                _context.Add(role);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
-            }
-            return View(role);
+            if (!IsAdmin())
+                return RedirectToAction("AccessDenied", "Account");
+
+            if (!ModelState.IsValid)
+                return View(role);
+
+            // Ensure RoleThreshold is linked to Role
+            if (role.RoleThreshold != null)
+                role.RoleThreshold.RoleId = role.RoleId;
+
+            _context.Add(role);
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(Index));
         }
 
         // GET: Roles/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
+            if (!IsAdmin())
+                return RedirectToAction("AccessDenied", "Account");
+
             if (id == null) return NotFound();
 
-            var role = await _context.Roles.FindAsync(id);
+            var role = await _context.Roles
+                .Include(r => r.RoleThreshold) // include RoleThreshold
+                .FirstOrDefaultAsync(r => r.RoleId == id);
+
             if (role == null) return NotFound();
 
+            // Ensure RoleThreshold is not null for the view
+            if (role.RoleThreshold == null)
+                role.RoleThreshold = new RoleThreshold { MaxAmount = 0 };
+
+            ViewBag.CurrentUserRole = GetCurrentUserRole();
             return View(role);
         }
-
         // POST: Roles/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("RoleId,RoleName,Description,CanApprove")] Role role)
+        public async Task<IActionResult> Edit(int id, Role role)
         {
-            if (id != role.RoleId) return NotFound();
+            if (!IsAdmin())
+                return RedirectToAction("AccessDenied", "Account");
 
-            if (ModelState.IsValid)
+            if (id != role.RoleId) return NotFound();
+            if (!ModelState.IsValid) return View(role);
+
+            // Load existing role including RoleThreshold
+            var existingRole = await _context.Roles
+                .Include(r => r.RoleThreshold)
+                .FirstOrDefaultAsync(r => r.RoleId == id);
+
+            if (existingRole == null) return NotFound();
+
+            // Update main fields
+            existingRole.RoleName = role.RoleName;
+            existingRole.Description = role.Description;
+            existingRole.CanApprove = role.CanApprove;
+
+            // Update or create RoleThreshold
+            if (existingRole.RoleThreshold == null && role.RoleThreshold != null)
             {
-                try
+                existingRole.RoleThreshold = new RoleThreshold
                 {
-                    _context.Update(role);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!RoleExists(role.RoleId)) return NotFound();
-                    else throw;
-                }
-                return RedirectToAction(nameof(Index));
+                    MaxAmount = role.RoleThreshold.MaxAmount
+                };
             }
-            return View(role);
+            else if (existingRole.RoleThreshold != null && role.RoleThreshold != null)
+            {
+                existingRole.RoleThreshold.MaxAmount = role.RoleThreshold.MaxAmount;
+            }
+
+            _context.Update(existingRole);
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction(nameof(Index));
         }
 
         // GET: Roles/Delete/5
         public async Task<IActionResult> Delete(int? id)
         {
+            if (!IsAdmin())
+                return RedirectToAction("AccessDenied", "Account");
+
             if (id == null) return NotFound();
 
-            var role = await _context.Roles
-                .FirstOrDefaultAsync(m => m.RoleId == id);
+            var role = await _context.Roles.FindAsync(id);
             if (role == null) return NotFound();
 
+            ViewBag.CurrentUserRole = GetCurrentUserRole();
             return View(role);
         }
 
@@ -109,16 +167,14 @@ namespace StationaryManagement1.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
+            if (!IsAdmin())
+                return RedirectToAction("AccessDenied", "Account");
+
             var role = await _context.Roles.FindAsync(id);
             if (role != null) _context.Roles.Remove(role);
 
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
-        }
-
-        private bool RoleExists(int id)
-        {
-            return _context.Roles.Any(e => e.RoleId == id);
         }
     }
 }
