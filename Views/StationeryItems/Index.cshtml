@@ -6,6 +6,7 @@
 
     var categories = ViewData["Categories"] as SelectList ?? new SelectList(Enumerable.Empty<SelectListItem>());
     var selectedCategoryId = Context.Request.Query["categoryId"].ToString();
+    var currentUserRole = ViewBag.CurrentUserRole as string ?? "Guest";
 }
 
 <h2>Stationery Items</h2>
@@ -38,10 +39,11 @@
                     <p class="card-text"><strong>Stock:</strong> @item.CurrentStock</p>
                     <p class="card-text"><strong>Unit Cost:</strong> $@item.UnitCost</p>
 
+                    <!-- Everyone can see View -->
                     <a asp-action="Details" asp-route-id="@item.ItemId" class="btn btn-sm btn-outline-primary">View</a>
 
-                    @* Admin-only buttons *@
-                    @if (ViewBag.RoleId == 1)
+                    <!-- Only Admin sees Edit/Delete -->
+                    @if (currentUserRole == "Admin")
                     {
                         <a asp-action="Edit" asp-route-id="@item.ItemId" class="btn btn-sm btn-outline-warning ms-1">Edit</a>
                         <a asp-action="Delete" asp-route-id="@item.ItemId" class="btn btn-sm btn-outline-danger ms-1">Delete</a>

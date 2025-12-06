@@ -147,5 +147,12 @@ namespace StationaryManagement1.Controllers
 
             return Content("TestCookie set!");
         }
+        // GET: Account/AccessDenied
+        public IActionResult AccessDenied()
+        {
+            // Optional: you can pass a message via ViewData or TempData
+            ViewData["Message"] = "You do not have permission to access this page.";
+            return View();
+        }
     }
 }

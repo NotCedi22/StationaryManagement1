@@ -26,7 +26,7 @@
 
                 <div class="collapse navbar-collapse d-sm-inline-flex justify-content-between" id="navbarMenu">
 
-                    <!-- LEFT MENU -->
+                    @* LEFT MENU *@
                     <ul class="navbar-nav flex-grow-1">
                         <li class="nav-item"><a class="nav-link text-dark" asp-controller="Home" asp-action="Index">Home</a></li>
 
@@ -39,11 +39,28 @@
                         @* Require login for main menus *@
                         @if (empId != null)
                         {
-                            <li class="nav-item"><a class="nav-link text-dark" asp-controller="Employees" asp-action="Index">Employees</a></li>
+                            @* Employees link visible only to Admin (1) and Manager (2) *@
+                            @if (empRoleId == 1 || empRoleId == 2)
+                            {
+                                <li class="nav-item"><a class="nav-link text-dark" asp-controller="Employees" asp-action="Index">Employees</a></li>
+                            }
+
                             <li class="nav-item"><a class="nav-link text-dark" asp-controller="StationeryItems" asp-action="Index">Stationery Items</a></li>
+
+                            @* Notifications visible only to Admin (1) and Manager (2) *@
+                            @if (empRoleId == 1 || empRoleId == 2)
+                            {
+                                <li class="nav-item"><a class="nav-link text-dark" asp-controller="Notifications" asp-action="Index">Notifications</a></li>
+                            }
+
+                            @* Requests visible to all logged-in users *@
                             <li class="nav-item"><a class="nav-link text-dark" asp-controller="StationeryRequests" asp-action="Index">Requests</a></li>
-                            <li class="nav-item"><a class="nav-link text-dark" asp-controller="Notifications" asp-action="Index">Notifications</a></li>
-                            <li class="nav-item"><a class="nav-link text-dark" asp-controller="Reports" asp-action="Index">Reports</a></li>
+
+                            @* Reports link visible only to Admin (1) and Manager (2) *@
+                            @if (empRoleId == 1 || empRoleId == 2)
+                            {
+                                <li class="nav-item"><a class="nav-link text-dark" asp-controller="Reports" asp-action="Index">Reports</a></li>
+                            }
 
                             @* Admin-only menu (RoleId = 1) *@
                             @if (empRoleId == 1)
@@ -98,7 +115,7 @@
         <div class="container">
             &copy; 2025 - StationeryManagement -
             <a asp-controller="Home" asp-action="Privacy">Privacy</a>
-        </div>
+        </div>¶
     </footer>
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>

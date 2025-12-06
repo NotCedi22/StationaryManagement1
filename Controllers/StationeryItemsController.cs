@@ -22,9 +22,9 @@ namespace StationaryManagement1.Controllers
             // Get current user and role
             var currentUserId = GetCurrentUserId();
             var currentUser = await _context.Employees.FindAsync(currentUserId);
-            var currentUserRoleId = currentUser?.RoleId ?? 0; // 1 = Admin
+            var currentUserRole = GetCurrentUserRole(); // Use string role
 
-            ViewBag.RoleId = currentUserRoleId;
+            ViewBag.CurrentUserRole = currentUserRole; // Pass to view
 
             // Fetch all categories for dropdown
             var categories = await _context.Categories.ToListAsync();
@@ -51,8 +51,12 @@ namespace StationaryManagement1.Controllers
 
             if (stationeryItem == null) return NotFound();
 
+            // Pass current user's role to the view
+            ViewBag.CurrentUserRole = GetCurrentUserRole();
+
             return View(stationeryItem);
         }
+
 
         // GET: StationeryItems/Create
         public IActionResult Create()
@@ -181,6 +185,17 @@ namespace StationaryManagement1.Controllers
                     return id;
             }
             return 0;
+        }
+        private string GetCurrentUserRole()
+        {
+            var roleId = HttpContext.Session.GetInt32("RoleId");
+            return roleId switch
+            {
+                1 => "Admin",
+                2 => "Manager",
+                3 => "Employee",
+                _ => "Guest"
+            };
         }
     }
 }

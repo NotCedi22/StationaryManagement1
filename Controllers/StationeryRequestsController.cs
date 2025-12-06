@@ -59,7 +59,7 @@ namespace StationaryManagement1.Controllers
             var currentUserRole = GetCurrentUserRole();
 
             if (currentUserRole == "Employee" && request.EmployeeId != currentUserId)
-                return Forbid();
+                return RedirectToAction("AccessDenied", "Account");
 
             // Pass current user's role to the view for UI purposes (Edit button)
             ViewBag.CurrentUserRole = currentUserRole;
@@ -179,7 +179,7 @@ namespace StationaryManagement1.Controllers
             var currentUserRole = GetCurrentUserRole();
 
             if (currentUserRole == "Employee" && request.EmployeeId != currentUserId)
-                return Forbid();
+                return RedirectToAction("AccessDenied", "Account");
 
             PopulateEmployeesAndSuperiorsDropDown(request.EmployeeId, request.SuperiorId);
 
@@ -212,7 +212,7 @@ namespace StationaryManagement1.Controllers
             var currentUserRole = GetCurrentUserRole();
 
             if (currentUserRole == "Employee" && request.EmployeeId != currentUserId)
-                return Forbid();
+                return RedirectToAction("AccessDenied", "Account");
 
             if (Quantities == null || !Quantities.Any())
             {
@@ -291,7 +291,7 @@ namespace StationaryManagement1.Controllers
             if (request == null) return NotFound();
 
             var role = GetCurrentUserRole();
-            if (role != "Manager" && role != "Admin") return Forbid();
+            if (role != "Manager" && role != "Admin") return RedirectToAction("AccessDenied", "Account");
 
             request.Status = "Approved";
             request.LastStatusChangedAt = DateTime.UtcNow;
@@ -313,7 +313,7 @@ namespace StationaryManagement1.Controllers
             if (request == null) return NotFound();
 
             var role = GetCurrentUserRole();
-            if (role != "Manager" && role != "Admin") return Forbid();
+            if (role != "Manager" && role != "Admin") return RedirectToAction("AccessDenied", "Account");
 
             request.Status = "Rejected";
             request.LastStatusChangedAt = DateTime.UtcNow;
@@ -330,7 +330,7 @@ namespace StationaryManagement1.Controllers
             if (request == null) return NotFound();
 
             var currentUserId = GetCurrentUserId();
-            if (request.EmployeeId != currentUserId) return Forbid();
+            if (request.EmployeeId != currentUserId) return RedirectToAction("AccessDenied", "Account");
             if (request.Status != "Pending") return BadRequest("Cannot withdraw processed request.");
 
             request.Status = "Withdrawn";
