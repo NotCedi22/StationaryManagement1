@@ -2,6 +2,9 @@
 
 @{
     ViewData["Title"] = "Stationery Request Details";
+
+    var currentUserId = (int?)ViewData["CurrentUserId"];
+    var currentUserRole = (string?)ViewData["CurrentUserRole"];
 }
 
 <h1>Details</h1>
@@ -37,11 +40,37 @@
 </div>
 
 
-<div>
+<div class="mt-3">
     @* Only show Edit button if user is Admin or Manager *@
-    @if (ViewBag.CurrentUserRole == "Admin" || ViewBag.CurrentUserRole == "Manager")
+    @if (currentUserRole == "Admin" || currentUserRole == "Manager")
     {
         <a asp-action="Edit" asp-route-id="@Model.RequestId" class="btn btn-warning">Edit</a>
     }
+
+    @* Employee: withdraw pending *@
+    @if (currentUserRole == "Employee" && Model.EmployeeId == currentUserId && Model.Status == "Pending")
+    {
+        <form asp-action="Withdraw" asp-route-id="@Model.RequestId" method="post" class="d-inline">
+            <button type="submit" class="btn btn-outline-danger">Withdraw</button>
+        </form>
+    }
+
+    @* Employee: request cancel approved *@
+    @if (currentUserRole == "Employee" && Model.EmployeeId == currentUserId && Model.Status == "Approved")
+    {
+        <form asp-action="RequestCancel" asp-route-id="@Model.RequestId" method="post" class="d-inline">
+            <button type="submit" class="btn btn-outline-danger">Request Cancel</button>
+        </form>
+    }
+
+    @* Superior/Manager/Admin: approve cancel when pending *@
+    @if (Model.Status == "CancelPending" &&
+        ((currentUserRole == "Admin" || currentUserRole == "Manager") || Model.SuperiorId == currentUserId))
+    {
+        <form asp-action="ApproveCancel" asp-route-id="@Model.RequestId" method="post" class="d-inline">
+            <button type="submit" class="btn btn-success">Approve Cancel</button>
+        </form>
+    }
+
     <a asp-action="Index" class="btn btn-secondary">Back to List</a>
 </div>

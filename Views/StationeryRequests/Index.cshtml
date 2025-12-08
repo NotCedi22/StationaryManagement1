@@ -57,11 +57,29 @@
                             </form>
                         }
                     }
-                    @* Employee withdraw action *@
-                    else if (currentUserRole == "Employee" && item.EmployeeId == currentUserId && item.Status == "Pending")
+
+                    @* Employee withdraw action for pending *@
+                    @if (currentUserRole == "Employee" && item.EmployeeId == currentUserId && item.Status == "Pending")
                     {
                         <form asp-action="Withdraw" asp-route-id="@item.RequestId" method="post" style="display:inline">
                             <button type="submit" class="btn btn-sm btn-outline-danger">Withdraw</button>
+                        </form>
+                    }
+
+                    @* Employee cancel request for approved *@
+                    @if (currentUserRole == "Employee" && item.EmployeeId == currentUserId && item.Status == "Approved")
+                    {
+                        <form asp-action="RequestCancel" asp-route-id="@item.RequestId" method="post" style="display:inline">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Request Cancel</button>
+                        </form>
+                    }
+
+                    @* Superior/Manager/Admin approve cancel when pending *@
+                    @if (item.Status == "CancelPending" &&
+                        ((currentUserRole == "Admin" || currentUserRole == "Manager") || item.SuperiorId == currentUserId))
+                    {
+                        <form asp-action="ApproveCancel" asp-route-id="@item.RequestId" method="post" style="display:inline">
+                            <button type="submit" class="btn btn-sm btn-success">Approve Cancel</button>
                         </form>
                     }
                 </td>

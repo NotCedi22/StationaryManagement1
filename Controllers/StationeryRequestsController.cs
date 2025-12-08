@@ -147,16 +147,8 @@ namespace StationaryManagement1.Controllers
                 RequestDate = DateTime.UtcNow
             };
 
+            // Save request with its items in one go to avoid double inserts
             _context.StationeryRequests.Add(request);
-            await _context.SaveChangesAsync();
-
-            // Save RequestItems
-            foreach (var ri in requestItems)
-            {
-                ri.RequestId = request.RequestId;
-                _context.RequestItems.Add(ri);
-            }
-
             await _context.SaveChangesAsync();
 
             TempData["Success"] = "Request created successfully!";
