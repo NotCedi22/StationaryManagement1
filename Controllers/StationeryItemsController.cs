@@ -4,10 +4,6 @@ using Microsoft.EntityFrameworkCore;
 using StationaryManagement1.Data;
 using StationaryManagement1.Models;
 using StationaryManagement1.Models.ViewModels;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace StationaryManagement1.Controllers
 {

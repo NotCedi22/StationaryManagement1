@@ -19,6 +19,13 @@ builder.Services.AddSession(options =>
     options.IdleTimeout = TimeSpan.FromHours(1);   // 🔥 1 hour
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always; // send only over HTTPS
+});
+
+// Antiforgery cookies also HTTPS-only
+builder.Services.AddAntiforgery(options =>
+{
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
 });
 
 // Allow session access
@@ -38,20 +45,10 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
-app.UseAuthentication();
-app.UseAuthorization();
+// Sessions before auth/remember-me helper
+app.UseSession();
 
-app.UseSession();  // 🔥 MUST be here BEFORE endpoints
-
-// -----------------------------------------
-// AUTO LOGIN FROM COOKIE IF SESSION EMPTY
-// -----------------------------------------
-app.UseHttpsRedirection();
-app.UseStaticFiles();
-
-app.UseSession();  // session must be BEFORE this middleware
-
-// Restore session from remember-me cookies
+// Restore session from remember-me cookies if empty
 app.Use(async (context, next) =>
 {
     if (context.Session.GetInt32("EmployeeId") == null)
@@ -62,18 +59,19 @@ app.Use(async (context, next) =>
 
         if (!string.IsNullOrEmpty(userIdCookie) &&
             !string.IsNullOrEmpty(nameCookie) &&
-            !string.IsNullOrEmpty(roleCookie))
+            !string.IsNullOrEmpty(roleCookie) &&
+            int.TryParse(userIdCookie, out var uid) &&
+            int.TryParse(roleCookie, out var rid))
         {
-            context.Session.SetInt32("EmployeeId", int.Parse(userIdCookie));
+            context.Session.SetInt32("EmployeeId", uid);
             context.Session.SetString("EmployeeName", nameCookie);
-            context.Session.SetInt32("RoleId", int.Parse(roleCookie));
+            context.Session.SetInt32("RoleId", rid);
         }
     }
 
     await next.Invoke();
 });
 
-app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 

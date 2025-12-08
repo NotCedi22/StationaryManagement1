@@ -1,7 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using StationaryManagement1.Data;
-using StationaryManagement1.Models;
-using BCrypt.Net;
 
 namespace StationaryManagement1.Controllers
 {

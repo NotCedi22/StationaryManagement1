@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace StationaryManagement1.Models
 {
@@ -20,7 +18,7 @@ namespace StationaryManagement1.Models
         public string? Reason { get; set; }
         public DateTime? LastStatusChangedAt { get; set; }
 
-       
+
         public string Status { get; set; } = "Pending";
 
         // Navigation properties

@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace StationaryManagement1.Models
+﻿namespace StationaryManagement1.Models
 {
     public class Employee
     {

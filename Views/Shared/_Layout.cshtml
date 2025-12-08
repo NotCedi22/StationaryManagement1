@@ -9,7 +9,6 @@
 
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/StationaryManagement.styles.css" asp-append-version="true" />
 </head>
 
 <body>
@@ -52,6 +51,7 @@
                             }
 
                             <li class="nav-item"><a class="nav-link text-dark" asp-controller="StationeryRequests" asp-action="Index">Requests</a></li>
+                            <li class="nav-item"><a class="nav-link text-dark" asp-controller="Help" asp-action="Index">Help</a></li>
 
                             @* Reports: Admin + Manager *@
                             @if (empRoleId == 1 || empRoleId == 2)

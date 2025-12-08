@@ -72,11 +72,12 @@ namespace StationaryManagement1.Controllers
             // REMEMBER ME (store cookies)
             if (rememberMe)
             {
+                var isHttps = Request.IsHttps;
                 var cookieOptions = new CookieOptions
                 {
                     Expires = DateTime.UtcNow.AddDays(30),
                     HttpOnly = true,
-                    Secure = Request.IsHttps,
+                    Secure = isHttps, // use HTTPS in prod; ok on HTTP for local dev
                     IsEssential = true,
                     Path = "/"
                 };
