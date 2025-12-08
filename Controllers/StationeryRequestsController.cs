@@ -349,6 +349,26 @@ namespace StationaryManagement1.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+        // POST: Employee withdraws their cancellation request (revert to Approved)
+        [HttpPost]
+        public async Task<IActionResult> RevertCancel(int id)
+        {
+            var request = await _context.StationeryRequests.FindAsync(id);
+            if (request == null) return NotFound();
+
+            var currentUserId = GetCurrentUserId();
+            if (request.EmployeeId != currentUserId) return RedirectToAction("AccessDenied", "Account");
+
+            if (request.Status != "CancelPending") return BadRequest("Only pending cancellations can be reverted.");
+
+            request.Status = "Approved";
+            request.LastStatusChangedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = "Cancellation request withdrawn.";
+            return RedirectToAction(nameof(Index));
+        }
+
         // POST: Reject
         [HttpPost]
         public async Task<IActionResult> Reject(int id)

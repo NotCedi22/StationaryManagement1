@@ -63,6 +63,14 @@
         </form>
     }
 
+    @* Employee: withdraw cancellation while pending *@
+    @if (currentUserRole == "Employee" && Model.EmployeeId == currentUserId && Model.Status == "CancelPending")
+    {
+        <form asp-action="RevertCancel" asp-route-id="@Model.RequestId" method="post" class="d-inline">
+            <button type="submit" class="btn btn-outline-secondary">Withdraw Cancel</button>
+        </form>
+    }
+
     @* Superior/Manager/Admin: approve cancel when pending *@
     @if (Model.Status == "CancelPending" &&
         ((currentUserRole == "Admin" || currentUserRole == "Manager") || Model.SuperiorId == currentUserId))
