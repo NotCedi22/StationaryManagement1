@@ -305,6 +305,58 @@ namespace StationaryManagement1.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+        // POST: Request cancellation (employee requests to cancel an already approved request)
+        [HttpPost]
+        public async Task<IActionResult> RequestCancel(int id)
+        {
+            var request = await _context.StationeryRequests.FindAsync(id);
+            if (request == null) return NotFound();
+
+            var currentUserId = GetCurrentUserId();
+            if (request.EmployeeId != currentUserId) return RedirectToAction("AccessDenied", "Account");
+            if (request.Status != "Approved") return BadRequest("Only approved requests can be cancelled.");
+
+            request.Status = "CancelPending";
+            request.LastStatusChangedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = "Cancellation submitted and awaiting superior approval.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        // POST: Approve cancellation (superior/admin/manager) and restore stock
+        [HttpPost]
+        public async Task<IActionResult> ApproveCancel(int id)
+        {
+            var request = await _context.StationeryRequests
+                .Include(r => r.RequestItems)
+                .ThenInclude(ri => ri.Item)
+                .FirstOrDefaultAsync(r => r.RequestId == id);
+
+            if (request == null) return NotFound();
+
+            // Only the assigned superior or Manager/Admin can approve cancellation
+            var currentUserId = GetCurrentUserId();
+            var currentUserRole = GetCurrentUserRole();
+            var isSuperior = request.SuperiorId == currentUserId;
+            var canApprove = isSuperior || currentUserRole == "Manager" || currentUserRole == "Admin";
+            if (!canApprove) return RedirectToAction("AccessDenied", "Account");
+
+            if (request.Status != "CancelPending") return BadRequest("Request is not pending cancellation.");
+
+            request.Status = "Cancelled";
+            request.LastStatusChangedAt = DateTime.UtcNow;
+
+            // Restore stock that was previously deducted on approval
+            foreach (var ri in request.RequestItems)
+            {
+                if (ri.Item != null) ri.Item.CurrentStock += ri.Quantity;
+            }
+
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(Index));
+        }
+
         // POST: Reject
         [HttpPost]
         public async Task<IActionResult> Reject(int id)
