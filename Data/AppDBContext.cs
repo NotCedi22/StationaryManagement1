@@ -63,6 +63,11 @@ namespace StationaryManagement1.Data
 
             // Role identity
             modelBuilder.Entity<Role>().Property(r => r.RoleId).ValueGeneratedOnAdd();
+            modelBuilder.Entity<Role>()
+                .HasOne(r => r.ReportsTo)
+                .WithMany(r => r.DirectReports)
+                .HasForeignKey(r => r.ReportsToRoleId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             // Role → RoleThreshold 1:1
             modelBuilder.Entity<RoleThreshold>()
