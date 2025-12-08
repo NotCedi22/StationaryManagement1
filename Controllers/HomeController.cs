@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using StationaryManagement1.Models.ViewModels;
 using System.Diagnostics;
 
-namespace StationaryManagement.Controllers
+namespace StationaryManagement1.Controllers
 {
     public class HomeController : Controller
     {
