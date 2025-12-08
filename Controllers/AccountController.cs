@@ -1,18 +1,15 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using StationaryManagement1.Data;
+using StationaryManagement1.Services;
 
 
-namespace StationaryManagement1.Controllers
+namespace StationaryManagement1.Controllers;
+
+public class AccountController(AppDBContext context, NotificationService notificationService) : Controller
 {
-    public class AccountController : Controller
-    {
-        private readonly AppDBContext _context;
-
-        public AccountController(AppDBContext context)
-        {
-            _context = context;
-        }
+    private readonly AppDBContext _context = context;
+    private readonly NotificationService _notificationService = notificationService;
 
         // REGISTER
         [HttpGet] public IActionResult Register() => View();
@@ -129,6 +126,7 @@ namespace StationaryManagement1.Controllers
             user.ModifiedAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
 
+            await _notificationService.NotifyAsync(user.EmployeeId, user.SuperiorId, null, "Your account password was changed.");
             TempData["Success"] = "Password changed successfully!";
             return RedirectToAction("Index", "Home");
         }
@@ -156,4 +154,3 @@ namespace StationaryManagement1.Controllers
             return View();
         }
     }
-}

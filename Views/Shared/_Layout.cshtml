@@ -1,4 +1,6 @@
 ﻿@using Microsoft.AspNetCore.Http
+@using StationaryManagement1.Data
+@inject AppDBContext Db
 
 <!DOCTYPE html>
 <html lang="en">
@@ -44,12 +46,6 @@
 
                             <li class="nav-item"><a class="nav-link text-dark" asp-controller="StationeryItems" asp-action="Index">Stationery Items</a></li>
 
-                            @* Notifications: Admin + Manager *@
-                            @if (empRoleId == 1 || empRoleId == 2)
-                            {
-                                <li class="nav-item"><a class="nav-link text-dark" asp-controller="Notifications" asp-action="Index">Notifications</a></li>
-                            }
-
                             <li class="nav-item"><a class="nav-link text-dark" asp-controller="StationeryRequests" asp-action="Index">Requests</a></li>
                             <li class="nav-item"><a class="nav-link text-dark" asp-controller="Help" asp-action="Index">Help</a></li>
 
@@ -64,18 +60,66 @@
                         }
                     </ul>
 
-                    @* RIGHT: User info *@
+                    @* RIGHT: User info + notifications *@
                     <ul class="navbar-nav">
                         @{
                             var empName = Context.Session.GetString("EmployeeName") ?? "User";
+                            var empIdRight = Context.Session.GetInt32("EmployeeId");
+                            var unreadCount = 0;
+                            var latestNotifications = new List<StationaryManagement1.Models.Notification>();
+
+                            if (empIdRight != null && Db != null)
+                            {
+                                latestNotifications = Db.Notifications
+                                    .Where(n => n.EmployeeId == empIdRight.Value)
+                                    .OrderByDescending(n => n.CreatedAt)
+                                    .Take(5)
+                                    .ToList();
+
+                                unreadCount = latestNotifications.Count(n => !n.IsRead);
+                            }
                         }
 
-                        @if (empId == null)
+                        @if (empIdRight == null)
                         {
                             <li class="nav-item"><a class="nav-link text-dark" asp-controller="Account" asp-action="Login">Login</a></li>
                         }
                         else
                         {
+                            <li class="nav-item dropdown me-2">
+                                <a class="nav-link dropdown-toggle position-relative" href="#" id="notifDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <img src="~/images/bell.png" alt="Notifications" style="width:20px;height:20px;">
+                                    @if (unreadCount > 0)
+                                    {
+                                        <span class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle"></span>
+                                    }
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="notifDropdown" style="min-width:280px;">
+                                    <li class="dropdown-header d-flex justify-content-between align-items-center">
+                                        <span>Notifications</span>
+                                        <a class="small" asp-controller="Notifications" asp-action="Index">Open dashboard</a>
+                                    </li>
+                                    @if (!latestNotifications.Any())
+                                    {
+                                        <li><span class="dropdown-item-text text-muted">No notifications yet.</span></li>
+                                    }
+                                    else
+                                    {
+                                        @foreach (var n in latestNotifications)
+                                        {
+                                            <li>
+                                                <a class="dropdown-item d-flex flex-column" href="@Url.Action("Go", "Notifications", new { id = n.NotificationId })">
+                                                    <span class="fw-semibold @(n.IsRead ? "" : "text-primary")">@n.Message</span>
+                                                    <small class="text-muted">@n.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</small>
+                                                </a>
+                                            </li>
+                                        }
+                                    }
+                                    <li><hr class="dropdown-divider" /></li>
+                                    <li><a class="dropdown-item" asp-controller="Notifications" asp-action="Index">View all</a></li>
+                                </ul>
+                            </li>
+
                             <li class="nav-item dropdown">
                                 <a class="nav-link dropdown-toggle text-dark" href="#" id="accountDropdown"
                                    role="button" data-bs-toggle="dropdown" aria-expanded="false">@empName</a>

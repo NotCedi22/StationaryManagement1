@@ -4,35 +4,68 @@
     ViewData["Title"] = "Notifications";
 }
 
-<h2>Notifications</h2>
+<div class="d-flex align-items-center mb-3">
+    <img src="~/images/bell.png" alt="Notifications" style="width:26px;height:26px;" class="me-2" />
+    <h2 class="mb-0">Notifications</h2>
+</div>
 
-<table class="table table-striped table-bordered">
-    <thead class="table-light">
-        <tr>
-            <th>Employee</th>
-            <th>Message</th>
-            <th>Date</th>
-            <th>Status</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var notification in Model)
-        {
-            <tr>
-                <td>@notification.Employee?.Name</td>
-                <td>@notification.Message</td>
-                <td>@notification.CreatedAt.ToString("yyyy-MM-dd HH:mm")</td>
-                <td>
-                    @if (notification.IsRead)
+<div class="card shadow-sm">
+    <div class="table-responsive">
+        <table class="table align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Recipient</th>
+                    <th>Superior</th>
+                    <th>Message</th>
+                    <th>Request</th>
+                    <th>Status</th>
+                    <th>Created</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="6" class="text-center text-muted py-4">No notifications.</td>
+                    </tr>
+                }
+                else
+                {
+                    foreach (var notification in Model)
                     {
-                        <span class="badge bg-success">Read</span>
+                        var request = notification.RelatedRequest;
+                        var superiorName = request?.Superior?.Name ?? "—";
+                        <tr>
+                            <td>@notification.Employee?.Name</td>
+                            <td>@superiorName</td>
+                            <td class="fw-semibold">@notification.Message</td>
+                            <td>
+                                @if (notification.RelatedRequestId.HasValue)
+                                {
+                                    <a asp-controller="StationeryRequests" asp-action="Details" asp-route-id="@notification.RelatedRequestId.Value">
+                                        Request #@notification.RelatedRequestId.Value
+                                    </a>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">N/A</span>
+                                }
+                            </td>
+                            <td>
+                                @if (notification.IsRead)
+                                {
+                                    <span class="badge bg-success">Read</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-warning text-dark">Unread</span>
+                                }
+                            </td>
+                            <td>@notification.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
+                        </tr>
                     }
-                    else
-                    {
-                        <span class="badge bg-warning text-dark">Unread</span>
-                    }
-                </td>
-            </tr>
-        }
-    </tbody>
-</table>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

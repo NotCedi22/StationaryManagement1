@@ -1,30 +1,57 @@
 ﻿@using StationaryManagement1.Models.ViewModels
-@model IEnumerable<FrequentItemView>
+@model IEnumerable<ItemCostReportViewModel>
 
 @{
-    ViewData["Title"] = "Reports - Frequent Items";
+    ViewData["Title"] = "Item Cost Report";
+    var grandTotal = ViewBag.TotalSpentAll as decimal? ?? 0;
 }
 
-<h2>Frequent Items Report</h2>
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="mb-0">Item Cost Report</h2>
+    <span class="text-muted">Total cost: @grandTotal.ToString("C2")</span>
+}
 
-<table class="table table-striped table-bordered">
-    <thead class="table-light">
-        <tr>
-            <th>Item</th>
-            <th>Total Requested</th>
-            <th>Requestor Count</th>
-            <th>Total Spent</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var item in Model)
-        {
-            <tr>
-                <td>@item.ItemName</td>
-                <td>@item.TotalRequested</td>
-                <td>@item.RequestorCount</td>
-                <td>@item.TotalSpent.ToString("C2")</td>
-            </tr>
-        }
-    </tbody>
-</table>
+<div class="card shadow-sm">
+    <div class="table-responsive">
+        <table class="table align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>#</th>
+                    <th>Item</th>
+                    <th class="text-end">Unit Price</th>
+                    <th class="text-end">Qty Requested</th>
+                    <th class="text-end">Headcount</th>
+                    <th class="text-end">Total Spent</th>
+                    <th class="text-end">% of Total</th>
+                    <th class="text-end">Cumulative</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="7" class="text-center text-muted py-4">No data available.</td>
+                    </tr>
+                }
+                else
+                {
+                    var row = 0;
+                    foreach (var item in Model)
+                    {
+                        row++;
+                        <tr>
+                            <td>@row</td>
+                            <td>@item.ItemName</td>
+                            <td class="text-end">@item.UnitCost.ToString("C2")</td>
+                            <td class="text-end">@item.TotalRequested</td>
+                            <td class="text-end">@item.HeadCount</td>
+                            <td class="text-end">@item.TotalSpent.ToString("C2")</td>
+                            <td class="text-end">@item.PercentOfTotal.ToString("0.00")%</td>
+                            <td class="text-end">@item.CumulativeCost.ToString("C2")</td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

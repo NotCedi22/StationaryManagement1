@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using StationaryManagement1.Data;
 using StationaryManagement1.Models;
+using StationaryManagement1.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -12,6 +13,9 @@ builder.Services.AddDbContext<AppDBContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
 );
 
+// Services
+builder.Services.AddScoped<NotificationService>();
+
 // Session services (1 HOUR EXPIRATION)
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(options =>
@@ -19,13 +23,17 @@ builder.Services.AddSession(options =>
     options.IdleTimeout = TimeSpan.FromHours(1);   // 🔥 1 hour
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
-    options.Cookie.SecurePolicy = CookieSecurePolicy.Always; // send only over HTTPS
+    options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest; // for localhost HTTP/HTTPS
+    // For production-only HTTPS cookies, switch to:
+    // options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
 });
 
 // Antiforgery cookies also HTTPS-only
 builder.Services.AddAntiforgery(options =>
 {
-    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest; // dev-friendly
+    // For production-only HTTPS cookies, switch to:
+    // options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
 });
 
 // Allow session access

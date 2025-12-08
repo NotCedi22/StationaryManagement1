@@ -4,17 +4,14 @@ using Microsoft.EntityFrameworkCore;
 using StationaryManagement1.Data;
 using StationaryManagement1.Models;
 using StationaryManagement1.Models.ViewModels;
+using StationaryManagement1.Services;
 
-namespace StationaryManagement1.Controllers
+namespace StationaryManagement1.Controllers;
+
+public class StationeryRequestsController(AppDBContext context, NotificationService notificationService) : Controller
 {
-    public class StationeryRequestsController : Controller
-    {
-        private readonly AppDBContext _context;
-
-        public StationeryRequestsController(AppDBContext context)
-        {
-            _context = context;
-        }
+    private readonly AppDBContext _context = context;
+    private readonly NotificationService _notificationService = notificationService;
 
         // GET: StationeryRequests
         public async Task<IActionResult> Index()
@@ -97,7 +94,7 @@ namespace StationaryManagement1.Controllers
             var currentUserId = GetCurrentUserId();
             if (currentUserId == 0) return RedirectToAction("Login", "Account");
 
-            if (Quantities == null || !Quantities.Any())
+            if (Quantities == null || Quantities.Count == 0)
             {
                 TempData["Error"] = "Select at least one item.";
                 return RedirectToAction(nameof(Create));
@@ -128,7 +125,7 @@ namespace StationaryManagement1.Controllers
                 totalCost += q.Value * item.UnitCost;
             }
 
-            if (!requestItems.Any())
+            if (requestItems.Count == 0)
             {
                 TempData["Error"] = "You must select at least one item.";
                 return RedirectToAction(nameof(Create));
@@ -151,6 +148,7 @@ namespace StationaryManagement1.Controllers
             _context.StationeryRequests.Add(request);
             await _context.SaveChangesAsync();
 
+            await NotifyRequestChange(request, $"Request #{request.RequestId} submitted and pending approval.");
             TempData["Success"] = "Request created successfully!";
             return RedirectToAction(nameof(Index));
         }
@@ -206,7 +204,7 @@ namespace StationaryManagement1.Controllers
             if (currentUserRole == "Employee" && request.EmployeeId != currentUserId)
                 return RedirectToAction("AccessDenied", "Account");
 
-            if (Quantities == null || !Quantities.Any())
+            if (Quantities == null || Quantities.Count == 0)
             {
                 TempData["Error"] = "Select at least one item.";
                 return RedirectToAction(nameof(Edit), new { id });
@@ -294,6 +292,7 @@ namespace StationaryManagement1.Controllers
             }
 
             await _context.SaveChangesAsync();
+            await NotifyRequestChange(request, $"Request #{request.RequestId} approved.");
             return RedirectToAction(nameof(Index));
         }
 
@@ -312,6 +311,7 @@ namespace StationaryManagement1.Controllers
             request.LastStatusChangedAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
 
+            await NotifyRequestChange(request, $"Request #{request.RequestId} cancellation requested and awaiting approval.");
             TempData["Success"] = "Cancellation submitted and awaiting superior approval.";
             return RedirectToAction(nameof(Index));
         }
@@ -346,6 +346,7 @@ namespace StationaryManagement1.Controllers
             }
 
             await _context.SaveChangesAsync();
+            await NotifyRequestChange(request, $"Cancellation for request #{request.RequestId} approved. The request is now cancelled.");
             return RedirectToAction(nameof(Index));
         }
 
@@ -365,6 +366,7 @@ namespace StationaryManagement1.Controllers
             request.LastStatusChangedAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
 
+            await NotifyRequestChange(request, $"Cancellation withdrawn for request #{request.RequestId}. Status reverted to Approved.");
             TempData["Success"] = "Cancellation request withdrawn.";
             return RedirectToAction(nameof(Index));
         }
@@ -383,6 +385,7 @@ namespace StationaryManagement1.Controllers
             request.LastStatusChangedAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
 
+            await NotifyRequestChange(request, $"Request #{request.RequestId} rejected.");
             return RedirectToAction(nameof(Index));
         }
 
@@ -401,6 +404,7 @@ namespace StationaryManagement1.Controllers
             request.LastStatusChangedAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
 
+            await NotifyRequestChange(request, $"Request #{request.RequestId} withdrawn by the requester.");
             return RedirectToAction(nameof(Index));
         }
 
@@ -437,5 +441,12 @@ namespace StationaryManagement1.Controllers
                 _ => "Guest"
             };
         }
+
+        private async Task NotifyRequestChange(StationeryRequest request, string message)
+        {
+            await _notificationService.NotifyAsync(request.EmployeeId, request.SuperiorId, request.RequestId, message);
+            TempData["Info"] = message;
+        }
     }
-}
+
+
