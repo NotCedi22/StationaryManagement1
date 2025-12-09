@@ -7,6 +7,7 @@
         public int RoleId { get; set; }
         public string Email { get; set; } = null!;
         public string? PasswordHash { get; set; }
+        public string? EmployeeNumber { get; set; }
         public string? Location { get; set; }
         public string? Grade { get; set; }
         public bool IsActive { get; set; } = true;

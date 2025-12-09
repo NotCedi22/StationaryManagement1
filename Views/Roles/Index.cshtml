@@ -20,6 +20,7 @@
         <tr>
             <th>Role Name</th>
             <th>Description</th>
+            <th>Reports To</th>
             <th>Eligibility Limit (QR)</th>
             <th style="width: 220px;"></th>
         </tr>
@@ -30,6 +31,7 @@
             <tr>
                 <td>@item.RoleName</td>
                 <td>@item.Description</td>
+                <td>@(item.ReportsTo?.RoleName ?? "—")</td>
                 <td>
                     @(
                                     item.RoleThreshold != null

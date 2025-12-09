@@ -36,8 +36,9 @@ namespace StationaryManagement1.Controllers
         {
             ViewBag.CurrentUserRole = GetCurrentUserRole();
             return View(await _context.Roles
-    .Include(r => r.RoleThreshold)
-    .ToListAsync());
+                .Include(r => r.RoleThreshold)
+                .Include(r => r.ReportsTo)
+                .ToListAsync());
         }
 
         // GET: Roles/Details/5

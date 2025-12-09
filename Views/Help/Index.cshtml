@@ -2,42 +2,136 @@
     ViewData["Title"] = "Help";
 }
 
-<h1>Help &amp; How-To</h1>
+<h1>Help &amp; FAQ</h1>
 
-<h4>Getting Started</h4>
-<ul>
-    <li>Log in with your account; your role (Admin, Manager, Employee) controls what you can do.</li>
-    <li>Use the top navigation to access Items, Requests, Reports, and Admin sections.</li>
-</ul>
+<div class="accordion" id="helpAccordion">
+    <div class="accordion-item">
+        <h2 class="accordion-header" id="q1">
+            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#a1" aria-expanded="true" aria-controls="a1">
+                How do I log in and what does my role allow?
+            </button>
+        </h2>
+        <div id="a1" class="accordion-collapse collapse show" aria-labelledby="q1" data-bs-parent="#helpAccordion">
+            <div class="accordion-body">
+                Log in with your email/password. Your role controls access:
+                <ul>
+                    <li><strong>Employee:</strong> create/withdraw requests, request cancellations.</li>
+                    <li><strong>Supervisor/Manager:</strong> approve/reject requests and cancellations.</li>
+                    <li><strong>Admin:</strong> manage users, roles, items, reports.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
 
-<h4>Stationery Items</h4>
-<ul>
-    <li>Browse items; availability shows <strong>Available</strong> (stock minus reserved) and <strong>Reserved</strong>.</li>
-    <li>Admins can create, edit, or delete items and upload images.</li>
-</ul>
+    <div class="accordion-item">
+        <h2 class="accordion-header" id="q2">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#a2" aria-expanded="false" aria-controls="a2">
+                How do I create a stationery request?
+            </button>
+        </h2>
+        <div id="a2" class="accordion-collapse collapse" aria-labelledby="q2" data-bs-parent="#helpAccordion">
+            <div class="accordion-body">
+                Go to <strong>Requests &gt; Create</strong>, pick items and quantities within available stock, select your superior, and submit.
+                You will see status changes and notifications as it’s processed.
+            </div>
+        </div>
+    </div>
 
-<h4>Requests</h4>
-<ul>
-    <li>Create a request by selecting items and quantities within available stock.</li>
-    <li>Status flow: Pending → Approved/Rejected. Employees can Withdraw while Pending.</li>
-    <li>For approved requests, employees can Request Cancel; superiors/manager/admin can Approve Cancel. Employees can Withdraw Cancel while it is pending.</li>
-    <li>Approvals deduct stock; cancellation approvals restore stock.</li>
-</ul>
+    <div class="accordion-item">
+        <h2 class="accordion-header" id="q3">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#a3" aria-expanded="false" aria-controls="a3">
+                What are the request statuses and actions?
+            </button>
+        </h2>
+        <div id="a3" class="accordion-collapse collapse" aria-labelledby="q3" data-bs-parent="#helpAccordion">
+            <div class="accordion-body">
+                <ul>
+                    <li><strong>Pending:</strong> waiting for approval. Employees can Withdraw.</li>
+                    <li><strong>Approved:</strong> stock is deducted. Employees may Request Cancel.</li>
+                    <li><strong>CancelPending:</strong> awaiting superior/manager/admin decision; stock not yet restored. Employees can Withdraw Cancel.</li>
+                    <li><strong>Cancelled:</strong> cancellation approved; stock restored.</li>
+                    <li><strong>Rejected/Withdrawn:</strong> closed without fulfillment.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
 
-<h4>Eligibility / Budget</h4>
-<ul>
-    <li>Employees can view monthly budget limits based on their role and see spent/pending amounts.</li>
-</ul>
+    <div class="accordion-item">
+        <h2 class="accordion-header" id="q4">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#a4" aria-expanded="false" aria-controls="a4">
+                How do approvals and inventory work?
+            </button>
+        </h2>
+        <div id="a4" class="accordion-collapse collapse" aria-labelledby="q4" data-bs-parent="#helpAccordion">
+            <div class="accordion-body">
+                Approval deducts item stock by approved quantities. Cancellation approval restores the deducted stock. Rejections/withdrawals do not change stock.
+            </div>
+        </div>
+    </div>
 
-<h4>Admin &amp; Manager</h4>
-<ul>
-    <li>Approve/Reject requests from the Requests list.</li>
-    <li>Manage categories, roles, and (for Admin) users as needed.</li>
-</ul>
+    <div class="accordion-item">
+        <h2 class="accordion-header" id="q5">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#a5" aria-expanded="false" aria-controls="a5">
+                How do notifications work?
+            </button>
+        </h2>
+        <div id="a5" class="accordion-collapse collapse" aria-labelledby="q5" data-bs-parent="#helpAccordion">
+            <div class="accordion-body">
+                You and your superior receive notifications on submit, approve/reject, withdraw, cancel request, cancel approval/withdraw. The bell shows unread; opening clears unread. Click an item to jump to the related request.
+            </div>
+        </div>
+    </div>
 
-<h4>Need Help?</h4>
-<ul>
-    <li>Contact your Admin if you cannot see expected options or need role changes.</li>
-    <li>Report issues with stock or approvals to your Manager/Admin.</li>
-</ul>
+    <div class="accordion-item">
+        <h2 class="accordion-header" id="q6">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#a6" aria-expanded="false" aria-controls="a6">
+                How do budgets/eligibility work?
+            </button>
+        </h2>
+        <div id="a6" class="accordion-collapse collapse" aria-labelledby="q6" data-bs-parent="#helpAccordion">
+            <div class="accordion-body">
+                Each role has a threshold (eligibility limit). Reports show total spend and per-item costs; managers/admin can view these under Reports.
+            </div>
+        </div>
+    </div>
+
+    <div class="accordion-item">
+        <h2 class="accordion-header" id="q7">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#a7" aria-expanded="false" aria-controls="a7">
+                How do I manage roles and hierarchy?
+            </button>
+        </h2>
+        <div id="a7" class="accordion-collapse collapse" aria-labelledby="q7" data-bs-parent="#helpAccordion">
+            <div class="accordion-body">
+                Admins can edit roles (including “Reports To”) under Roles. Employee records store their role and direct superior to reflect person-to-person reporting.
+            </div>
+        </div>
+    </div>
+
+    <div class="accordion-item">
+        <h2 class="accordion-header" id="q8">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#a8" aria-expanded="false" aria-controls="a8">
+                How do I reset or change my password?
+            </button>
+        </h2>
+        <div id="a8" class="accordion-collapse collapse" aria-labelledby="q8" data-bs-parent="#helpAccordion">
+            <div class="accordion-body">
+                Use the account dropdown &gt; Change Password. Passwords are stored as hashes (not plain text).
+            </div>
+        </div>
+    </div>
+
+    <div class="accordion-item">
+        <h2 class="accordion-header" id="q9">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#a9" aria-expanded="false" aria-controls="a9">
+                Who can help if I’m stuck?
+            </button>
+        </h2>
+        <div id="a9" class="accordion-collapse collapse" aria-labelledby="q9" data-bs-parent="#helpAccordion">
+            <div class="accordion-body">
+                For access/role issues, contact Admin. For stock/approval issues, contact your Manager/Supervisor.
+            </div>
+        </div>
+    </div>
+</div>
 
