@@ -1,0 +1,24 @@
+Restore StationeryDB.bak into SQL Server (SSMS)
+
+1) Open SSMS and connect to your SQL Server instance.
+2) Right-click "Databases" > "Restore Database...".
+3) Source: choose "Device", click "...", then "Add", browse to StationeryDB.bak (this folder), and select it.
+4) Destination: set database name (e.g., StationeryManagement1).
+5) Files: ensure data/log paths are valid for your server.
+6) Options:
+   - Check "Overwrite the existing database (WITH REPLACE)" only if you intend to replace an existing DB.
+   - Uncheck "Take tail-log backup" unless you need it.
+7) Click "OK" to restore and wait for the success message.
+
+Post-restore checks
+1) Expand the database > Tables to confirm objects are present.
+2) Run a quick query (e.g., SELECT TOP 5 * FROM Roles) to verify data.
+3) Update your appsettings connection string to point to this server/database; ensure the login has needed rights (db_owner or appropriate).
+
+If restoring to a different server/instance
+- Update connection string (Server=YOURSERVER;Database=StationeryManagement1;User Id=...;Password=...;TrustServerCertificate=True;).
+- For Windows Auth, use Integrated Security=True and omit user/password.
+
+If you have a .bacpac instead
+- In SSMS: Right-click "Databases" > "Import Data-tier Application..." and follow the wizard.
+
