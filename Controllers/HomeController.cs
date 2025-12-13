@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using StationaryManagement1.Data;
+using StationaryManagement1.Models.Filters;
 using StationaryManagement1.Models.ViewModels;
 using System.Diagnostics;
 
@@ -17,6 +18,7 @@ namespace StationaryManagement1.Controllers
             _context = context;
         }
 
+        [RequireLogin]
         public async Task<IActionResult> Index()
         {
             // Fetch dashboard statistics

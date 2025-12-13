@@ -66,22 +66,30 @@ public class AccountController(AppDBContext context, NotificationService notific
             HttpContext.Session.SetString("EmployeeName", user.Name);
             HttpContext.Session.SetInt32("RoleId", user.RoleId);
 
-            // REMEMBER ME (store cookies)
+            // REMEMBER ME (store cookies) - Cross-browser compatible
             if (rememberMe)
             {
                 var isHttps = Request.IsHttps;
                 var cookieOptions = new CookieOptions
                 {
                     Expires = DateTime.UtcNow.AddDays(30),
-                    HttpOnly = true,
-                    Secure = isHttps, // use HTTPS in prod; ok on HTTP for local dev
-                    IsEssential = true,
-                    Path = "/"
+                    HttpOnly = true, // Prevents JavaScript access for security
+                    Secure = isHttps, // HTTPS in production; HTTP for local dev
+                    IsEssential = true, // Required for GDPR compliance
+                    Path = "/",
+                    SameSite = SameSiteMode.Lax // Works across browsers (Chrome, Firefox, Safari, Edge)
                 };
 
                 Response.Cookies.Append("RememberEmployeeId", user.EmployeeId.ToString(), cookieOptions);
                 Response.Cookies.Append("RememberEmployeeName", user.Name, cookieOptions);
                 Response.Cookies.Append("RememberRoleId", user.RoleId.ToString(), cookieOptions);
+            }
+            else
+            {
+                // Clear remember-me cookies if user unchecks the box
+                Response.Cookies.Delete("RememberEmployeeId");
+                Response.Cookies.Delete("RememberEmployeeName");
+                Response.Cookies.Delete("RememberRoleId");
             }
 
             TempData["Success"] = "Login successful!";
@@ -92,9 +100,22 @@ public class AccountController(AppDBContext context, NotificationService notific
         public IActionResult Logout()
         {
             HttpContext.Session.Clear();
-            Response.Cookies.Delete("RememberEmployeeId");
-            Response.Cookies.Delete("RememberEmployeeName");
-            Response.Cookies.Delete("RememberRoleId");
+            
+            // Clear remember-me cookies with same options for cross-browser compatibility
+            var cookieOptions = new CookieOptions
+            {
+                Expires = DateTime.UtcNow.AddDays(-1), // Expire immediately
+                HttpOnly = true,
+                Secure = Request.IsHttps,
+                IsEssential = true,
+                Path = "/",
+                SameSite = SameSiteMode.Lax
+            };
+            
+            Response.Cookies.Append("RememberEmployeeId", "", cookieOptions);
+            Response.Cookies.Append("RememberEmployeeName", "", cookieOptions);
+            Response.Cookies.Append("RememberRoleId", "", cookieOptions);
+            
             return RedirectToAction("Login");
         }
 
