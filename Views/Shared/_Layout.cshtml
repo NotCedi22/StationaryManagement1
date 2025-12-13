@@ -185,6 +185,16 @@
                         }
                         else
                         {
+                            @if (empRoleId == 1)
+                            {
+                                <!-- Admin-only Register link -->
+                                <li class="nav-item">
+                                    <a class="nav-link text-white" asp-controller="Account" asp-action="Register">
+                                        <i class="bi bi-person-plus me-1"></i> Register
+                                    </a>
+                                </li>
+                            }
+                            
                             <!-- Notifications -->
                             <li class="nav-item dropdown me-3">
                                 <a class="nav-link position-relative text-white" href="#" role="button"

@@ -1,0 +1,189 @@
+@model StationaryManagement1.Models.Employee
+@using Microsoft.AspNetCore.Mvc.Rendering
+
+@{
+    ViewData["Title"] = "Register New Employee";
+    var roles = ViewBag.Roles as IEnumerable<StationaryManagement1.Models.Role> ?? new List<StationaryManagement1.Models.Role>();
+}
+
+<div class="register-container">
+    <div class="text-center mb-4">
+        <h2 class="fw-bold text-primary">
+            <i class="bi bi-person-plus me-2"></i>Register New Employee
+        </h2>
+        <p class="text-muted">Create a new employee account for HMT Stationery Management</p>
+        <div class="alert alert-info mb-4">
+            <i class="bi bi-info-circle me-2"></i>
+            <strong>Note:</strong> Employee Number will be automatically assigned (lowest available number 1-1000). Employee will use their <strong>email address</strong> to log in.
+        </div>
+    </div>
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger">
+            <i class="bi bi-exclamation-triangle me-2"></i>@TempData["Error"]
+        </div>
+    }
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success">
+            <i class="bi bi-check-circle me-2"></i>@TempData["Success"]
+        </div>
+    }
+
+    <form asp-action="Register" method="post" class="needs-validation" novalidate>
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label asp-for="Name" class="form-label fw-semibold">
+                    <i class="bi bi-person me-1"></i>Full Name <span class="text-danger">*</span>
+                </label>
+                <input asp-for="Name" class="form-control" placeholder="Enter full name (max 15 chars)" 
+                       required maxlength="15" pattern="[A-Za-z\s]+" 
+                       title="Name must be up to 15 characters, no special characters except spaces" />
+                <span asp-validation-for="Name" class="text-danger"></span>
+            </div>
+
+            <div class="col-md-6 mb-3">
+                <label asp-for="Email" class="form-label fw-semibold">
+                    <i class="bi bi-envelope me-1"></i>Email <span class="text-danger">*</span>
+                </label>
+                <input asp-for="Email" type="email" class="form-control" placeholder="Enter email (max 25 chars)" 
+                       required maxlength="25" />
+                <span asp-validation-for="Email" class="text-danger"></span>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label asp-for="RoleId" class="form-label fw-semibold">
+                    <i class="bi bi-shield-check me-1"></i>Role <span class="text-danger">*</span>
+                </label>
+                <select asp-for="RoleId" class="form-select" required>
+                    <option value="">-- Select Role --</option>
+                    @foreach (var role in roles)
+                    {
+                        <option value="@role.RoleId">@role.RoleName</option>
+                    }
+                </select>
+                <span asp-validation-for="RoleId" class="text-danger"></span>
+            </div>
+
+            <div class="col-md-6 mb-3">
+                <label for="password" class="form-label fw-semibold">
+                    <i class="bi bi-lock me-1"></i>Password <span class="text-danger">*</span>
+                </label>
+                <input name="password" type="password" class="form-control" placeholder="Enter password (min. 6 characters)" 
+                       required minlength="6" />
+                <div class="form-text">Password must be at least 6 characters long (stored in encrypted form).</div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label asp-for="Location" class="form-label fw-semibold">
+                    <i class="bi bi-geo-alt me-1"></i>Location
+                </label>
+                <input asp-for="Location" class="form-control" placeholder="Optional - Work location" />
+                <span asp-validation-for="Location" class="text-danger"></span>
+            </div>
+
+            <div class="col-md-6 mb-3">
+                <label asp-for="Grade" class="form-label fw-semibold">
+                    <i class="bi bi-award me-1"></i>Grade
+                </label>
+                <input asp-for="Grade" class="form-control" placeholder="Optional - Employee grade/level" />
+                <span asp-validation-for="Grade" class="text-danger"></span>
+            </div>
+        </div>
+
+        <div class="alert alert-success mb-4">
+            <i class="bi bi-check-circle me-2"></i>
+            <strong>Employee Creation:</strong>
+            <ul class="mb-0 mt-2">
+                <li>Employee Number will be automatically assigned</li>
+                <li>Account will be active immediately</li>
+                <li>Employee can log in using their email address</li>
+            </ul>
+        </div>
+
+        <div class="d-grid gap-2">
+            <button type="submit" class="btn btn-primary btn-lg py-3 register-btn">
+                <i class="bi bi-person-plus me-2"></i>Create Employee
+            </button>
+            <a asp-controller="Employees" asp-action="Index" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-2"></i>Back to Employees
+            </a>
+        </div>
+    </form>
+</div>
+
+<style>
+    .register-container {
+        max-width: 700px;
+        margin: 2rem auto;
+        padding: 2.5rem;
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    }
+
+    .register-btn {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+
+    .register-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+    }
+
+    .register-btn:active {
+        transform: translateY(0);
+    }
+
+    .form-control:focus, .form-select:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 0.25rem rgba(102, 126, 234, 0.25);
+    }
+
+    .alert {
+        border-radius: 10px;
+        border: none;
+    }
+
+    .form-label {
+        color: #495057;
+        margin-bottom: 0.5rem;
+    }
+
+    .text-danger {
+        font-size: 0.875rem;
+    }
+</style>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    
+    <script>
+        // Bootstrap validation
+        (function() {
+            'use strict';
+            var forms = document.querySelectorAll('.needs-validation');
+            Array.prototype.slice.call(forms).forEach(function(form) {
+                form.addEventListener('submit', function(event) {
+                    if (!form.checkValidity()) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                    }
+                    form.classList.add('was-validated');
+                }, false);
+            });
+        })();
+    </script>
+}

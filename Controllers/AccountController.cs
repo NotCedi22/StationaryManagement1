@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using StationaryManagement1.Data;
+using StationaryManagement1.Models.Filters;
 using StationaryManagement1.Services;
 
 
@@ -11,29 +12,97 @@ public class AccountController(AppDBContext context, NotificationService notific
     private readonly AppDBContext _context = context;
     private readonly NotificationService _notificationService = notificationService;
 
-        // REGISTER
-        [HttpGet] public IActionResult Register() => View();
+        // REGISTER - Admin only (no approval needed, direct creation)
+        [RequireLogin]
+        [HttpGet] 
+        public async Task<IActionResult> Register()
+        {
+            // Check if user is admin
+            var roleId = HttpContext.Session.GetInt32("RoleId");
+            if (roleId != 1)
+            {
+                return RedirectToAction("AccessDenied", "Account");
+            }
 
+            // Get all roles for admin to select
+            ViewBag.Roles = await _context.Roles.ToListAsync();
+            return View();
+        }
+
+        [RequireLogin]
         [HttpPost]
         public async Task<IActionResult> Register(StationaryManagement1.Models.Employee model, string password)
         {
-            if (!ModelState.IsValid) return View(model);
-
-            if (await _context.Employees.AnyAsync(e => e.Email == model.Email))
+            // Check if user is admin
+            var roleId = HttpContext.Session.GetInt32("RoleId");
+            if (roleId != 1)
             {
-                ModelState.AddModelError("", "Email already exists.");
+                return RedirectToAction("AccessDenied", "Account");
+            }
+
+            if (string.IsNullOrWhiteSpace(password) || password.Length < 6)
+            {
+                ModelState.AddModelError("", "Password must be at least 6 characters long.");
+                ViewBag.Roles = await _context.Roles.ToListAsync();
                 return View(model);
             }
 
+            if (!ModelState.IsValid)
+            {
+                ViewBag.Roles = await _context.Roles.ToListAsync();
+                return View(model);
+            }
+
+            // Check if email already exists
+            if (await _context.Employees.AnyAsync(e => e.Email == model.Email))
+            {
+                ModelState.AddModelError("Email", "Email already exists.");
+                ViewBag.Roles = await _context.Roles.ToListAsync();
+                return View(model);
+            }
+
+            // Auto-assign Employee Number: Find the lowest available number (1-1000)
+            var usedNumbers = await _context.Employees
+                .Where(e => !string.IsNullOrEmpty(e.EmployeeNumber))
+                .Select(e => e.EmployeeNumber)
+                .ToListAsync();
+
+            // Convert to integers and find available number
+            var usedInts = usedNumbers
+                .Where(n => !string.IsNullOrEmpty(n) && int.TryParse(n, out _))
+                .Select(n => int.Parse(n!))
+                .Where(n => n >= 1 && n <= 1000)
+                .OrderBy(n => n)
+                .ToList();
+
+            int? assignedNumber = null;
+            for (int i = 1; i <= 1000; i++)
+            {
+                if (!usedInts.Contains(i))
+                {
+                    assignedNumber = i;
+                    break;
+                }
+            }
+
+            if (!assignedNumber.HasValue)
+            {
+                ModelState.AddModelError("", "Sorry, all employee numbers (1-1000) are currently in use.");
+                ViewBag.Roles = await _context.Roles.ToListAsync();
+                return View(model);
+            }
+
+            // Set values - admin can choose role
+            model.EmployeeNumber = assignedNumber.Value.ToString();
             model.PasswordHash = BCrypt.Net.BCrypt.HashPassword(password);
             model.CreatedAt = DateTime.UtcNow;
-            model.IsActive = true;
+            model.IsActive = true; // Active immediately, no approval needed
 
             _context.Employees.Add(model);
             await _context.SaveChangesAsync();
 
-            TempData["Success"] = "Registration successful! You can now log in.";
-            return RedirectToAction("Login");
+            TempData["Success"] = $"Employee created successfully! Employee Number: {assignedNumber.Value}, Email: {model.Email}";
+            return RedirectToAction("Index", "Employees");
         }
 
         // LOGIN
@@ -49,11 +118,19 @@ public class AccountController(AppDBContext context, NotificationService notific
             }
 
             var user = await _context.Employees.FirstOrDefaultAsync(e => e.Email == email);
-            if (user == null || !BCrypt.Net.BCrypt.Verify(password, user.PasswordHash))
+            if (user == null)
             {
                 TempData["Error"] = "Invalid email or password.";
                 return RedirectToAction("Login");
             }
+
+            if (string.IsNullOrEmpty(user.PasswordHash) || !BCrypt.Net.BCrypt.Verify(password, user.PasswordHash))
+            {
+                TempData["Error"] = "Invalid email or password.";
+                return RedirectToAction("Login");
+            }
+
+            // No longer checking for pending approval since registration is automatic
 
             if (!user.IsActive)
             {
@@ -120,14 +197,14 @@ public class AccountController(AppDBContext context, NotificationService notific
         }
 
         // CHANGE PASSWORD
+        [RequireLogin]
         [HttpGet]
         public IActionResult ChangePassword()
         {
-            if (HttpContext.Session.GetInt32("EmployeeId") == null)
-                return RedirectToAction("Login");
             return View();
         }
 
+        [RequireLogin]
         [HttpPost]
         public async Task<IActionResult> ChangePassword(string currentPassword, string newPassword)
         {

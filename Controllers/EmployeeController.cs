@@ -2,31 +2,53 @@
 using Microsoft.EntityFrameworkCore;
 using StationaryManagement1.Data;
 using StationaryManagement1.Models;
+using StationaryManagement1.Models.Filters;
+using StationaryManagement1.Services;
 
 namespace StationaryManagement1.Controllers
 {
-    public class EmployeesController : Controller
+    [RequireLogin]
+    public class EmployeesController(AppDBContext context, NotificationService notificationService) : Controller
     {
-        private readonly AppDBContext _context;
+        private readonly AppDBContext _context = context;
+        private readonly NotificationService _notificationService = notificationService;
 
-        public EmployeesController(AppDBContext context)
-        {
-            _context = context;
-        }
-
-        // GET: Employees
+        // GET: Employees - Admin/Manager only
         public async Task<IActionResult> Index()
         {
+            // Check if user is admin or manager
+            var roleId = HttpContext.Session.GetInt32("RoleId");
+            if (roleId != 1 && roleId != 2)
+            {
+                return RedirectToAction("AccessDenied", "Account");
+            }
+
             var employees = await _context.Employees
                 .Include(e => e.Role)
                 .ToListAsync();
+            
             return View(employees);
         }
 
-        // GET: Employees/Details/5
+        // GET: Employees/Details/5 - Admin/Manager can see all, Employees can only see themselves
         public async Task<IActionResult> Details(int? id)
         {
             if (id == null) return NotFound();
+
+            var roleId = HttpContext.Session.GetInt32("RoleId");
+            var currentUserId = HttpContext.Session.GetInt32("EmployeeId");
+
+            // Employees can only view their own details
+            if (roleId == 3 && currentUserId != id)
+            {
+                return RedirectToAction("AccessDenied", "Account");
+            }
+
+            // Admin and Manager can view all
+            if (roleId != 1 && roleId != 2 && roleId != 3)
+            {
+                return RedirectToAction("AccessDenied", "Account");
+            }
 
             var employee = await _context.Employees
                 .Include(e => e.Role)
@@ -36,18 +58,32 @@ namespace StationaryManagement1.Controllers
             return View(employee);
         }
 
-        // GET: Employees/Create
+        // GET: Employees/Create - Admin only
         public IActionResult Create()
         {
+            // Check if user is admin
+            var roleId = HttpContext.Session.GetInt32("RoleId");
+            if (roleId != 1)
+            {
+                return RedirectToAction("AccessDenied", "Account");
+            }
+
             ViewBag.Roles = _context.Roles.ToList();
             return View();
         }
 
-        // POST: Employees/Create
+        // POST: Employees/Create - Admin only
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(Employee employee, string? Password)
         {
+            // Check if user is admin
+            var roleId = HttpContext.Session.GetInt32("RoleId");
+            if (roleId != 1)
+            {
+                return RedirectToAction("AccessDenied", "Account");
+            }
+
             if (ModelState.IsValid)
             {
                 if (!string.IsNullOrWhiteSpace(Password))
@@ -68,9 +104,16 @@ namespace StationaryManagement1.Controllers
             return View(employee);
         }
 
-        // GET: Employees/Edit/5
+        // GET: Employees/Edit/5 - Admin only
         public async Task<IActionResult> Edit(int? id)
         {
+            // Check if user is admin
+            var roleId = HttpContext.Session.GetInt32("RoleId");
+            if (roleId != 1)
+            {
+                return RedirectToAction("AccessDenied", "Account");
+            }
+
             if (id == null) return NotFound();
 
             var employee = await _context.Employees.FindAsync(id);
@@ -80,11 +123,18 @@ namespace StationaryManagement1.Controllers
             return View(employee);
         }
 
-        // POST: Employees/Edit/5
+        // POST: Employees/Edit/5 - Admin only
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, Employee employee, string? NewPassword)
         {
+            // Check if user is admin
+            var roleId = HttpContext.Session.GetInt32("RoleId");
+            if (roleId != 1)
+            {
+                return RedirectToAction("AccessDenied", "Account");
+            }
+
             if (id != employee.EmployeeId)
                 return NotFound();
 
@@ -113,9 +163,16 @@ namespace StationaryManagement1.Controllers
             return View(employee);
         }
 
-        // GET: Employees/Delete/5
+        // GET: Employees/Delete/5 - Admin only
         public async Task<IActionResult> Delete(int? id)
         {
+            // Check if user is admin
+            var roleId = HttpContext.Session.GetInt32("RoleId");
+            if (roleId != 1)
+            {
+                return RedirectToAction("AccessDenied", "Account");
+            }
+
             if (id == null) return NotFound();
 
             var employee = await _context.Employees
@@ -126,11 +183,18 @@ namespace StationaryManagement1.Controllers
             return View(employee);
         }
 
-        // POST: Employees/Delete/5
+        // POST: Employees/Delete/5 - Admin only
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
+            // Check if user is admin
+            var roleId = HttpContext.Session.GetInt32("RoleId");
+            if (roleId != 1)
+            {
+                return RedirectToAction("AccessDenied", "Account");
+            }
+
             var employee = await _context.Employees
                 .Include(e => e.Subordinates)
                 .Include(e => e.StationeryRequests)

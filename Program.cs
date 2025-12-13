@@ -165,26 +165,24 @@ app.Use(async (context, next) =>
             int.TryParse(roleCookie, out var rid))
         {
             // Validate user still exists and is active (security check)
-            using (var scope = app.Services.CreateScope())
+            using var scope = app.Services.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<AppDBContext>();
+            var user = await db.Employees
+                .FirstOrDefaultAsync(e => e.EmployeeId == uid && e.IsActive);
+            
+            if (user != null && user.RoleId == rid)
             {
-                var db = scope.ServiceProvider.GetRequiredService<AppDBContext>();
-                var user = await db.Employees
-                    .FirstOrDefaultAsync(e => e.EmployeeId == uid && e.IsActive);
-                
-                if (user != null && user.RoleId == rid)
-                {
-                    // User is valid and active, restore session
-                    context.Session.SetInt32("EmployeeId", uid);
-                    context.Session.SetString("EmployeeName", user.Name); // Use current name from DB
-                    context.Session.SetInt32("RoleId", rid);
-                }
-                else
-                {
-                    // User no longer exists or is inactive, clear cookies
-                    context.Response.Cookies.Delete("RememberEmployeeId");
-                    context.Response.Cookies.Delete("RememberEmployeeName");
-                    context.Response.Cookies.Delete("RememberRoleId");
-                }
+                // User is valid and active, restore session
+                context.Session.SetInt32("EmployeeId", uid);
+                context.Session.SetString("EmployeeName", user.Name); // Use current name from DB
+                context.Session.SetInt32("RoleId", rid);
+            }
+            else
+            {
+                // User no longer exists or is inactive, clear cookies
+                context.Response.Cookies.Delete("RememberEmployeeId");
+                context.Response.Cookies.Delete("RememberEmployeeName");
+                context.Response.Cookies.Delete("RememberRoleId");
             }
         }
     }
@@ -214,18 +212,78 @@ using (var scope = app.Services.CreateScope())
 
         if (adminRole != null)
         {
-            db.Employees.Add(new Employee
+            // Check if admin already exists
+            var existingAdmin = db.Employees.FirstOrDefault(e => e.Email == "admin@example.com");
+            if (existingAdmin == null)
             {
-                Name = "Admin",
-                Email = "admin@example.com",
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword("admin123"),
-                RoleId = adminRole.RoleId,
-                CreatedAt = DateTime.UtcNow,
-                IsActive = true
-            });
+                db.Employees.Add(new Employee
+                {
+                    Name = "Admin",
+                    Email = "admin@example.com",
+                    EmployeeNumber = "1", // Assign employee number 1 for admin
+                    PasswordHash = BCrypt.Net.BCrypt.HashPassword("admin123"),
+                    RoleId = adminRole.RoleId,
+                    CreatedAt = DateTime.UtcNow,
+                    IsActive = true
+                });
 
-            db.SaveChanges();
+                db.SaveChanges();
+            }
+            else
+            {
+                // Ensure existing admin has correct password and employee number
+                if (string.IsNullOrEmpty(existingAdmin.EmployeeNumber))
+                {
+                    existingAdmin.EmployeeNumber = "1";
+                }
+                // Re-hash password to ensure it's correct
+                existingAdmin.PasswordHash = BCrypt.Net.BCrypt.HashPassword("admin123");
+                existingAdmin.IsActive = true;
+                db.SaveChanges();
+            }
         }
+    }
+
+    // -----------------------------------------
+    // ASSIGN EMPLOYEE NUMBERS TO EXISTING USERS WITHOUT ONE
+    // -----------------------------------------
+    var employeesWithoutNumber = db.Employees
+        .Where(e => string.IsNullOrEmpty(e.EmployeeNumber))
+        .OrderBy(e => e.EmployeeId)
+        .ToList();
+
+    if (employeesWithoutNumber.Any())
+    {
+        var usedNumbers = db.Employees
+            .Where(e => !string.IsNullOrEmpty(e.EmployeeNumber))
+            .Select(e => e.EmployeeNumber)
+            .ToList();
+
+        var usedInts = usedNumbers
+            .Where(n => !string.IsNullOrEmpty(n) && int.TryParse(n, out _))
+            .Select(n => int.Parse(n!))
+            .Where(n => n >= 1 && n <= 1000)
+            .OrderBy(n => n)
+            .ToList();
+
+        int nextNumber = 1;
+        foreach (var emp in employeesWithoutNumber)
+        {
+            // Find next available number
+            while (usedInts.Contains(nextNumber) && nextNumber <= 1000)
+            {
+                nextNumber++;
+            }
+
+            if (nextNumber <= 1000)
+            {
+                emp.EmployeeNumber = nextNumber.ToString();
+                usedInts.Add(nextNumber);
+                nextNumber++;
+            }
+        }
+
+        db.SaveChanges();
     }
 }
 

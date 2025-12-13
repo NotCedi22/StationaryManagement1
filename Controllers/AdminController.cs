@@ -1,17 +1,30 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Http;
 using StationaryManagement1.Data;
+using StationaryManagement1.Models.Filters;
 
 namespace StationaryManagement1.Controllers
 {
+    [RequireLogin]
     public class AdminController : Controller
     {
         private readonly AppDBContext _context;
 
         public AdminController(AppDBContext context) => _context = context;
 
+        private bool IsAdmin()
+        {
+            return HttpContext.Session.GetInt32("RoleId") == 1;
+        }
+
         // GET: Admin/HashPasswords
         public IActionResult HashPasswords()
         {
+            if (!IsAdmin())
+            {
+                return RedirectToAction("AccessDenied", "Account");
+            }
+
             return View();
         }
 
@@ -20,6 +33,11 @@ namespace StationaryManagement1.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult HashPasswordsConfirmed()
         {
+            if (!IsAdmin())
+            {
+                return RedirectToAction("AccessDenied", "Account");
+            }
+
             var employees = _context.Employees.ToList();
 
             foreach (var emp in employees)
@@ -28,8 +46,8 @@ namespace StationaryManagement1.Controllers
                 {
                     string plainPassword = emp.PasswordHash;
 
-                    // Assign known passwords for specific users
-                    if (emp.Email.ToLower().Contains("admin"))
+                    // Assign known passwords
+                    if (emp.Email.Contains("admin", StringComparison.OrdinalIgnoreCase))
                         plainPassword = "admin123";
                     else if (emp.RoleId == 2) // Employee
                         plainPassword = "pass123";
@@ -42,7 +60,7 @@ namespace StationaryManagement1.Controllers
 
             _context.SaveChanges();
             ViewBag.Message = "All passwords hashed successfully!";
-            return View();
+            return View("HashPasswords");
         }
     }
 }

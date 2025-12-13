@@ -1,10 +1,13 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Http;
 using StationaryManagement1.Data;
 using StationaryManagement1.Models;
+using StationaryManagement1.Models.Filters;
 
 namespace StationaryManagement1.Controllers
 {
+    [RequireLogin]
     public class CategoriesController : Controller
     {
         private readonly AppDBContext _context;
@@ -27,34 +30,43 @@ namespace StationaryManagement1.Controllers
 
             var category = await _context.Categories
                 .FirstOrDefaultAsync(c => c.CategoryId == id);
+
             if (category == null) return NotFound();
 
             return View(category);
         }
 
-        // GET: Categories/Create
+        // GET: Categories/Create (Admin only)
         public IActionResult Create()
         {
+            if (HttpContext.Session.GetInt32("RoleId") != 1)
+                return RedirectToAction("AccessDenied", "Account");
+
             return View();
         }
 
         // POST: Categories/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("CategoryId,CategoryName,Description")] Category category)
+        public async Task<IActionResult> Create(Category category)
         {
-            if (ModelState.IsValid)
-            {
-                _context.Add(category);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
-            }
-            return View(category);
+            if (HttpContext.Session.GetInt32("RoleId") != 1)
+                return RedirectToAction("AccessDenied", "Account");
+
+            if (!ModelState.IsValid)
+                return View(category);
+
+            _context.Add(category);
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(Index));
         }
 
         // GET: Categories/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
+            if (HttpContext.Session.GetInt32("RoleId") != 1)
+                return RedirectToAction("AccessDenied", "Account");
+
             if (id == null) return NotFound();
 
             var category = await _context.Categories.FindAsync(id);
@@ -66,34 +78,42 @@ namespace StationaryManagement1.Controllers
         // POST: Categories/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("CategoryId,CategoryName,Description")] Category category)
+        public async Task<IActionResult> Edit(int id, Category category)
         {
+            if (HttpContext.Session.GetInt32("RoleId") != 1)
+                return RedirectToAction("AccessDenied", "Account");
+
             if (id != category.CategoryId) return NotFound();
 
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid)
+                return View(category);
+
+            try
             {
-                try
-                {
-                    _context.Update(category);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!_context.Categories.Any(c => c.CategoryId == id)) return NotFound();
-                    else throw;
-                }
-                return RedirectToAction(nameof(Index));
+                _context.Update(category);
+                await _context.SaveChangesAsync();
             }
-            return View(category);
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!_context.Categories.Any(c => c.CategoryId == id))
+                    return NotFound();
+                throw;
+            }
+
+            return RedirectToAction(nameof(Index));
         }
 
         // GET: Categories/Delete/5
         public async Task<IActionResult> Delete(int? id)
         {
+            if (HttpContext.Session.GetInt32("RoleId") != 1)
+                return RedirectToAction("AccessDenied", "Account");
+
             if (id == null) return NotFound();
 
             var category = await _context.Categories
                 .FirstOrDefaultAsync(c => c.CategoryId == id);
+
             if (category == null) return NotFound();
 
             return View(category);
@@ -104,12 +124,16 @@ namespace StationaryManagement1.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
+            if (HttpContext.Session.GetInt32("RoleId") != 1)
+                return RedirectToAction("AccessDenied", "Account");
+
             var category = await _context.Categories.FindAsync(id);
             if (category != null)
             {
                 _context.Categories.Remove(category);
                 await _context.SaveChangesAsync();
             }
+
             return RedirectToAction(nameof(Index));
         }
     }

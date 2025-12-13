@@ -2,9 +2,11 @@
 using Microsoft.EntityFrameworkCore;
 using StationaryManagement1.Data;
 using StationaryManagement1.Models;
+using StationaryManagement1.Models.Filters;
 
 namespace StationaryManagement1.Controllers
 {
+    [RequireLogin]
     public class RolesController : Controller
     {
         private readonly AppDBContext _context;

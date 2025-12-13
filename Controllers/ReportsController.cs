@@ -1,8 +1,10 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using StationaryManagement1.Data;
+using StationaryManagement1.Models.Filters;
 using StationaryManagement1.Models.ViewModels;
 
+[RequireLogin]
 public class ReportsController : Controller
 {
     private readonly AppDBContext _context;

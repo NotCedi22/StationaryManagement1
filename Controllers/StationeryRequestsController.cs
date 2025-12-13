@@ -3,11 +3,13 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using StationaryManagement1.Data;
 using StationaryManagement1.Models;
+using StationaryManagement1.Models.Filters;
 using StationaryManagement1.Models.ViewModels;
 using StationaryManagement1.Services;
 
 namespace StationaryManagement1.Controllers;
 
+[RequireLogin]
 public class StationeryRequestsController(AppDBContext context, NotificationService notificationService) : Controller
 {
     private readonly AppDBContext _context = context;
