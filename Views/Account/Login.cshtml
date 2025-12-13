@@ -2,36 +2,53 @@
     ViewData["Title"] = "Login";
 }
 
-<h2>Login</h2>
-
-@if (TempData["Error"] != null)
-{
-    <div class="alert alert-danger">@TempData["Error"]</div>
-}
-
-@if (TempData["Success"] != null)
-{
-    <div class="alert alert-success">@TempData["Success"]</div>
-}
-
-<form asp-action="Login" method="post">
-    <div class="mb-3">
-        <label>Email</label>
-        <input name="email" class="form-control" placeholder="Email" required />
+<div class="login-container">
+    <div class="text-center mb-4">
+        <h2 class="fw-bold text-primary">
+            <i class="bi bi-box-arrow-in-right me-2"></i>Login
+        </h2>
+        <p class="text-muted">Sign in to access HMT Stationery Management</p>
     </div>
 
-    <div class="mb-3">
-        <label>Password</label>
-        <input name="password" type="password" class="form-control" placeholder="Password" required />
-    </div>
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger">
+            <i class="bi bi-exclamation-triangle me-2"></i>@TempData["Error"]
+        </div>
+    }
 
-    <div class="form-check mb-3">
-        <input class="form-check-input" type="checkbox" name="rememberMe" id="rememberMe" />
-        <label class="form-check-label" for="rememberMe">
-            Remember Me
-        </label>
-        <div class="form-text">Keep me signed in on this device (uses browser cookies).</div>
-    </div>
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success">
+            <i class="bi bi-check-circle me-2"></i>@TempData["Success"]
+        </div>
+    }
 
-    <button class="btn btn-primary">Login</button>
-</form>
+    <form asp-action="Login" method="post">
+        <div class="mb-3">
+            <label class="form-label fw-semibold">Email</label>
+            <input name="email" type="email" class="form-control" placeholder="Enter your email" required />
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label fw-semibold">Password</label>
+            <input name="password" type="password" class="form-control" placeholder="Enter your password" required />
+        </div>
+
+        <div class="form-check mb-4">
+            <input class="form-check-input" type="checkbox" name="rememberMe" id="rememberMe" />
+            <label class="form-check-label" for="rememberMe">
+                Remember Me
+            </label>
+            <div class="form-text">Keep me signed in on this device (uses browser cookies).</div>
+        </div>
+
+        <button type="submit" class="btn btn-primary w-100 py-2">
+            <i class="bi bi-box-arrow-in-right me-2"></i>Login
+        </button>
+    </form>
+
+    <div class="text-center mt-3">
+        <small class="text-muted">Don't have an account? Contact your administrator.</small>
+    </div>
+</div>

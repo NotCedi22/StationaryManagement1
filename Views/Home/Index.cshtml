@@ -2,16 +2,59 @@
     ViewData["Title"] = "Home Page";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div class="container py-4">
 
-    <hr />
+    <!-- HERO SECTION -->
+    <div class="text-center mb-5">
+        <h1 class="display-4 fw-bold text-primary">Welcome to HMT Stationery Management</h1>
+        <p class="lead text-muted">
+            Manage stationery items, requests, employees, and reports efficiently.
+        </p>
+    </div>
 
-    <h3>
-        @if (ViewData["RememberMessage"] != null)
-        {
-            <span>@ViewData["RememberMessage"]</span>
-        }
-    </h3>
+    <!-- DASHBOARD CARDS -->
+    <div class="row g-4 mb-5">
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 text-center py-4">
+                <i class="bi bi-box-seam display-4 text-success mb-2"></i>
+                <h5 class="fw-bold">Items</h5>
+                <p class="text-muted fs-4 fw-bold">@(ViewData["ItemCount"] ?? "0")</p>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 text-center py-4">
+                <i class="bi bi-people-fill display-4 text-warning mb-2"></i>
+                <h5 class="fw-bold">Employees</h5>
+                <p class="text-muted fs-4 fw-bold">@(ViewData["EmployeeCount"] ?? "0")</p>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 text-center py-4">
+                <i class="bi bi-list-check display-4 text-danger mb-2"></i>
+                <h5 class="fw-bold">Pending Requests</h5>
+                <p class="text-muted fs-4 fw-bold">@(ViewData["PendingRequests"] ?? "0")</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- QUICK ACTION BUTTONS -->
+    <div class="row g-3">
+        <div class="col-md-4">
+            <a asp-controller="StationeryItems" asp-action="Index" class="btn btn-success w-100 shadow-sm py-3">
+                <i class="bi bi-box-seam me-2"></i> Items
+            </a>
+        </div>
+        <div class="col-md-4">
+            <a asp-controller="Employees" asp-action="Index" class="btn btn-warning w-100 shadow-sm py-3 text-dark">
+                <i class="bi bi-people-fill me-2"></i> Employees
+            </a>
+        </div>
+        <div class="col-md-4">
+            <a asp-controller="StationeryRequests" asp-action="Index" class="btn btn-danger w-100 shadow-sm py-3">
+                <i class="bi bi-list-check me-2"></i> Requests
+            </a>
+        </div>
+    </div>
 </div>

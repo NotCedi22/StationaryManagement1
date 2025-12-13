@@ -11,25 +11,97 @@
 
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+
+    <style>
+        /* ----- HEADER STYLE ----- */
+        .navbar-custom {
+            background: linear-gradient(to right, #0d6efd, #0b5ed7);
+            padding: 0.75rem 1rem;
+        }
+
+        .navbar-brand img {
+            border-radius: 6px;
+        }
+
+        .navbar-brand {
+            font-size: 1.35rem;
+            letter-spacing: 0.3px;
+            display: flex;
+            align-items: center;
+            font-weight: 700;
+        }
+
+        .nav-link {
+            font-weight: 500;
+            transition: 0.25s ease-in-out;
+        }
+
+        .nav-link:hover {
+            color: #d9e7ff !important;
+            transform: translateY(-1px);
+        }
+
+        .dropdown-menu {
+            border-radius: 8px;
+        }
+
+        .navbar-shadow {
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+        }
+
+        /* ----- FOOTER STYLE ----- */
+        footer {
+            background: #f8f9fa;
+            border-top: 2px solid #e5e5e5;
+        }
+
+        footer .footer-text {
+            font-size: 0.95rem;
+            color: #6c757d;
+        }
+
+        footer a {
+            color: #0d6efd;
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+
 </head>
 
 <body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-light bg-white border-bottom box-shadow mb-3">
+
+    <header class="navbar-shadow">
+        <nav class="navbar navbar-expand-lg navbar-dark navbar-custom">
             <div class="container-fluid">
 
-                <a class="navbar-brand" asp-controller="Home" asp-action="Index">StationeryManagement</a>
+                <!-- LOGO / BRAND -->
+                <a class="navbar-brand" asp-controller="Home" asp-action="Index">
+                    @if (System.IO.File.Exists(System.IO.Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/images/chip.png")))
+                    {
+                        <img src="~/images/chip.png" alt="HMT Logo" width="34" class="me-2">
+                    }
+                    HMT Stationery Management
+                </a>
 
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMenu"
-                        aria-controls="navbarMenu" aria-expanded="false" aria-label="Toggle navigation">
+                <!-- MOBILE TOGGLER -->
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain">
                     <span class="navbar-toggler-icon"></span>
                 </button>
 
-                <div class="collapse navbar-collapse d-sm-inline-flex justify-content-between" id="navbarMenu">
+                <div class="collapse navbar-collapse" id="navbarMain">
 
-                    @* LEFT MENU *@
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item"><a class="nav-link text-dark" asp-controller="Home" asp-action="Index">Home</a></li>
+                    <!-- LEFT MENU -->
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                        <li class="nav-item">
+                            <a class="nav-link text-white" asp-controller="Home" asp-action="Index">
+                                <i class="bi bi-house-door me-1"></i> Home
+                            </a>
+                        </li>
 
                         @{
                             var empId = Context.Session.GetInt32("EmployeeId");
@@ -38,30 +110,53 @@
 
                         @if (empId != null)
                         {
-                            @* Employees: Admin + Manager *@
-                            @if (empRoleId == 1 || empRoleId == 2)
+                            if (empRoleId is 1 or 2)
                             {
-                                <li class="nav-item"><a class="nav-link text-dark" asp-controller="Employees" asp-action="Index">Employees</a></li>
+                                <li class="nav-item">
+                                    <a class="nav-link text-white" asp-controller="Employees" asp-action="Index">
+                                        <i class="bi bi-people me-1"></i> Employees
+                                    </a>
+                                </li>
                             }
 
-                            <li class="nav-item"><a class="nav-link text-dark" asp-controller="StationeryItems" asp-action="Index">Stationery Items</a></li>
+                            <li class="nav-item">
+                                <a class="nav-link text-white" asp-controller="StationeryItems" asp-action="Index">
+                                    <i class="bi bi-box-seam me-1"></i> Items
+                                </a>
+                            </li>
 
-                            <li class="nav-item"><a class="nav-link text-dark" asp-controller="StationeryRequests" asp-action="Index">Requests</a></li>
-                            <li class="nav-item"><a class="nav-link text-dark" asp-controller="Help" asp-action="Index">Help</a></li>
+                            <li class="nav-item">
+                                <a class="nav-link text-white" asp-controller="StationeryRequests" asp-action="Index">
+                                    <i class="bi bi-list-check me-1"></i> Requests
+                                </a>
+                            </li>
 
-                            @* Reports: Admin + Manager *@
-                            @if (empRoleId == 1 || empRoleId == 2)
+                            <li class="nav-item">
+                                <a class="nav-link text-white" asp-controller="Help" asp-action="Index">
+                                    <i class="bi bi-question-circle me-1"></i> Help
+                                </a>
+                            </li>
+
+                            if (empRoleId is 1 or 2)
                             {
-                                <li class="nav-item"><a class="nav-link text-dark" asp-controller="Reports" asp-action="Index">Reports</a></li>
+                                <li class="nav-item">
+                                    <a class="nav-link text-white" asp-controller="Reports" asp-action="Index">
+                                        <i class="bi bi-bar-chart me-1"></i> Reports
+                                    </a>
+                                </li>
                             }
 
-                            @* 🔥 NEW: All logged users can see Roles *@
-                            <li class="nav-item"><a class="nav-link text-dark" asp-controller="Roles" asp-action="Index">Roles</a></li>
+                            <li class="nav-item">
+                                <a class="nav-link text-white" asp-controller="Roles" asp-action="Index">
+                                    <i class="bi bi-diagram-3 me-1"></i> Roles
+                                </a>
+                            </li>
                         }
                     </ul>
 
-                    @* RIGHT: User info + notifications *@
-                    <ul class="navbar-nav">
+                    <!-- RIGHT MENU -->
+                    <ul class="navbar-nav ms-auto">
+
                         @{
                             var empName = Context.Session.GetString("EmployeeName") ?? "User";
                             var empIdRight = Context.Session.GetInt32("EmployeeId");
@@ -71,10 +166,10 @@
                             if (empIdRight != null && Db != null)
                             {
                                 latestNotifications = Db.Notifications
-                                    .Where(n => n.EmployeeId == empIdRight.Value)
-                                    .OrderByDescending(n => n.CreatedAt)
-                                    .Take(5)
-                                    .ToList();
+                                .Where(n => n.EmployeeId == empIdRight.Value)
+                                .OrderByDescending(n => n.CreatedAt)
+                                .Take(5)
+                                .ToList();
 
                                 unreadCount = latestNotifications.Count(n => !n.IsRead);
                             }
@@ -82,71 +177,85 @@
 
                         @if (empIdRight == null)
                         {
-                            <li class="nav-item"><a class="nav-link text-dark" asp-controller="Account" asp-action="Login">Login</a></li>
+                            <li class="nav-item">
+                                <a class="nav-link text-white" asp-controller="Account" asp-action="Login">
+                                    <i class="bi bi-box-arrow-in-right me-1"></i> Login
+                                </a>
+                            </li>
                         }
                         else
                         {
-                            <li class="nav-item dropdown me-2">
-                                <a class="nav-link dropdown-toggle position-relative" href="#" id="notifDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                    <img src="~/images/bell.png" alt="Notifications" style="width:20px;height:20px;">
+                            <!-- Notifications -->
+                            <li class="nav-item dropdown me-3">
+                                <a class="nav-link position-relative text-white" href="#" role="button"
+                                   data-bs-toggle="dropdown">
+                                    <i class="bi bi-bell fs-5"></i>
+
                                     @if (unreadCount > 0)
                                     {
-                                        <span class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle"></span>
+                                        <span class="position-absolute top-0 start-100 translate-middle
+                                         badge rounded-pill bg-danger">
+                                            @unreadCount
+                                        </span>
                                     }
                                 </a>
-                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="notifDropdown" style="min-width:280px;">
-                                    <li class="dropdown-header d-flex justify-content-between align-items-center">
-                                        <span>Notifications</span>
-                                        <a class="small" asp-controller="Notifications" asp-action="Index">Open dashboard</a>
-                                    </li>
+
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <li class="dropdown-header fw-bold">Notifications</li>
+
                                     @if (!latestNotifications.Any())
                                     {
-                                        <li><span class="dropdown-item-text text-muted">No notifications yet.</span></li>
+                                        <li><span class="dropdown-item text-muted">No notifications</span></li>
                                     }
                                     else
                                     {
                                         @foreach (var n in latestNotifications)
                                         {
                                             <li>
-                                                <a class="dropdown-item d-flex flex-column" href="@Url.Action("Go", "Notifications", new { id = n.NotificationId })">
+                                                <a class="dropdown-item" href="@Url.Action("Go", "Notifications", new { id = n.NotificationId })">
                                                     <span class="fw-semibold @(n.IsRead ? "" : "text-primary")">@n.Message</span>
+                                                    <br />
                                                     <small class="text-muted">@n.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</small>
                                                 </a>
                                             </li>
                                         }
                                     }
-                                    <li><hr class="dropdown-divider" /></li>
+
+                                    <li><hr /></li>
                                     <li><a class="dropdown-item" asp-controller="Notifications" asp-action="Index">View all</a></li>
                                 </ul>
                             </li>
 
+                            <!-- User Profile -->
                             <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle text-dark" href="#" id="accountDropdown"
-                                   role="button" data-bs-toggle="dropdown" aria-expanded="false">@empName</a>
+                                <a class="nav-link dropdown-toggle text-white" href="#" data-bs-toggle="dropdown">
+                                    <i class="bi bi-person-circle me-1"></i> @empName
+                                </a>
 
-                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="accountDropdown">
+                                <ul class="dropdown-menu dropdown-menu-end">
                                     <li><a class="dropdown-item" asp-controller="Account" asp-action="ChangePassword">Change Password</a></li>
                                     <li><a class="dropdown-item" asp-controller="Account" asp-action="Logout">Logout</a></li>
                                 </ul>
                             </li>
                         }
                     </ul>
+
                 </div>
             </div>
         </nav>
     </header>
 
-    <div class="container">
-        <main role="main" class="pb-3">
+    <div class="container mt-4">
+        <main class="pb-3">
             @RenderBody()
         </main>
     </div>
 
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2025 - StationeryManagement -
-            <a asp-controller="Home" asp-action="Privacy">Privacy</a>
-        </div>¶
+    <footer class="py-3 mt-4">
+        <div class="container text-center footer-text">
+            © 2025 HMT Technologies — Stationery Management |
+            <a asp-controller="Home" asp-action="Privacy">Privacy Policy</a>
+        </div>
     </footer>
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
@@ -154,5 +263,6 @@
     <script src="~/js/site.js" asp-append-version="true"></script>
 
     @await RenderSectionAsync("Scripts", required: false)
+
 </body>
 </html>
