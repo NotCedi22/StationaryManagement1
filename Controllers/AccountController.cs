@@ -11,30 +11,6 @@ public class AccountController(AppDBContext context, NotificationService notific
     private readonly AppDBContext _context = context;
     private readonly NotificationService _notificationService = notificationService;
 
-        // REGISTER
-        [HttpGet] public IActionResult Register() => View();
-
-        [HttpPost]
-        public async Task<IActionResult> Register(StationaryManagement1.Models.Employee model, string password)
-        {
-            if (!ModelState.IsValid) return View(model);
-
-            if (await _context.Employees.AnyAsync(e => e.Email == model.Email))
-            {
-                ModelState.AddModelError("", "Email already exists.");
-                return View(model);
-            }
-
-            model.PasswordHash = BCrypt.Net.BCrypt.HashPassword(password);
-            model.CreatedAt = DateTime.UtcNow;
-            model.IsActive = true;
-
-            _context.Employees.Add(model);
-            await _context.SaveChangesAsync();
-
-            TempData["Success"] = "Registration successful! You can now log in.";
-            return RedirectToAction("Login");
-        }
 
         // LOGIN
         [HttpGet] public IActionResult Login() => View();
