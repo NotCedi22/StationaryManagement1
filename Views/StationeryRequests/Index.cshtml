@@ -7,91 +7,142 @@
     var currentUserRole = (string?)ViewData["CurrentUserRole"];
 }
 
-<h1>Stationery Requests</h1>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold">
+        <i class="bi bi-list-check me-2 text-primary"></i>Stationery Requests
+    </h2>
+    <a asp-action="Create" class="btn btn-primary">
+        <i class="bi bi-plus-circle me-2"></i>Create New Request
+    </a>
+</div>
 
-<p>
-    <a asp-action="Create" class="btn btn-primary">Create New Request</a>
-</p>
-
-<table class="table table-striped">
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th>Employee</th>
-            <th>Superior</th>
-            <th>Status</th>
-            <th>Total Cost</th>
-            <th>Request Date</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var item in Model)
-        {
-            <tr>
-                <td>@item.RequestId</td>
-                <td>@item.Employee?.Name</td>
-                <td>@item.Superior?.Name</td>
-                <td>@item.Status</td>
-                <td>@item.TotalCost.ToString("C")</td>
-                <td>@item.RequestDate.ToLocalTime().ToString("g")</td>
-                <td>
-                    <a asp-action="Details" asp-route-id="@item.RequestId" class="btn btn-sm btn-info">Details</a>
-
-                    @* Admin/Manager actions *@
-                    @if (currentUserRole == "Admin" || currentUserRole == "Manager")
-                    {
-                        <a asp-action="Edit" asp-route-id="@item.RequestId" class="btn btn-sm btn-warning">Edit</a>
-                        <form asp-action="Delete" asp-route-id="@item.RequestId" method="post" style="display:inline">
-                            @Html.AntiForgeryToken()
-                            <button type="submit" class="btn btn-sm btn-danger">Delete</button>
-                        </form>
-
-                        @if (item.Status == "Pending")
+@if (!Model.Any())
+{
+    <div class="alert alert-info text-center">
+        <i class="bi bi-info-circle me-2"></i>No requests found.
+    </div>
+}
+else
+{
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>ID</th>
+                            <th>Employee</th>
+                            <th>Superior</th>
+                            <th>Status</th>
+                            <th>Total Cost</th>
+                            <th>Request Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
                         {
-                            <form asp-action="Approve" asp-route-id="@item.RequestId" method="post" style="display:inline">
-                                <button type="submit" class="btn btn-sm btn-success">Approve</button>
-                            </form>
-                            <form asp-action="Reject" asp-route-id="@item.RequestId" method="post" style="display:inline">
-                                <button type="submit" class="btn btn-sm btn-secondary">Reject</button>
-                            </form>
+                            var statusBadgeClass = item.Status switch
+                            {
+                                "Approved" => "bg-success",
+                                "Pending" => "bg-warning",
+                                "Rejected" => "bg-danger",
+                                "CancelPending" => "bg-info",
+                                "Cancelled" => "bg-secondary",
+                                "Withdrawn" => "bg-dark",
+                                _ => "bg-secondary"
+                            };
+
+                            <tr>
+                                <td><strong>#@item.RequestId</strong></td>
+                                <td>@item.Employee?.Name</td>
+                                <td>@item.Superior?.Name</td>
+                                <td>
+                                    <span class="badge @statusBadgeClass">@item.Status</span>
+                                </td>
+                                <td><strong>@item.TotalCost.ToString("C")</strong></td>
+                                <td>@item.RequestDate.ToLocalTime().ToString("g")</td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <a asp-action="Details" asp-route-id="@item.RequestId" class="btn btn-sm btn-outline-primary" title="View Details">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+
+                                        @* Admin/Manager actions *@
+                                        @if (currentUserRole == "Admin" || currentUserRole == "Manager")
+                                        {
+                                            <a asp-action="Edit" asp-route-id="@item.RequestId" class="btn btn-sm btn-outline-warning" title="Edit">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                            <form asp-action="Delete" asp-route-id="@item.RequestId" method="post" style="display:inline">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete" onclick="return confirm('Are you sure you want to delete this request?');">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </form>
+
+                                            @if (item.Status == "Pending")
+                                            {
+                                                <form asp-action="Approve" asp-route-id="@item.RequestId" method="post" style="display:inline">
+                                                    <button type="submit" class="btn btn-sm btn-success" title="Approve">
+                                                        <i class="bi bi-check-circle"></i>
+                                                    </button>
+                                                </form>
+                                                <form asp-action="Reject" asp-route-id="@item.RequestId" method="post" style="display:inline">
+                                                    <button type="submit" class="btn btn-sm btn-danger" title="Reject">
+                                                        <i class="bi bi-x-circle"></i>
+                                                    </button>
+                                                </form>
+                                            }
+                                        }
+
+                                        @* Employee withdraw action for pending *@
+                                        @if (currentUserRole == "Employee" && item.EmployeeId == currentUserId && item.Status == "Pending")
+                                        {
+                                            <form asp-action="Withdraw" asp-route-id="@item.RequestId" method="post" style="display:inline">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Withdraw">
+                                                    <i class="bi bi-arrow-counterclockwise"></i>
+                                                </button>
+                                            </form>
+                                        }
+
+                                        @* Employee cancel request for approved *@
+                                        @if (currentUserRole == "Employee" && item.EmployeeId == currentUserId && item.Status == "Approved")
+                                        {
+                                            <form asp-action="RequestCancel" asp-route-id="@item.RequestId" method="post" style="display:inline">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Request Cancel">
+                                                    <i class="bi bi-x-octagon"></i>
+                                                </button>
+                                            </form>
+                                        }
+
+                                        @* Employee revert cancellation while pending *@
+                                        @if (currentUserRole == "Employee" && item.EmployeeId == currentUserId && item.Status == "CancelPending")
+                                        {
+                                            <form asp-action="RevertCancel" asp-route-id="@item.RequestId" method="post" style="display:inline">
+                                                <button type="submit" class="btn btn-sm btn-outline-secondary" title="Withdraw Cancel">
+                                                    <i class="bi bi-arrow-counterclockwise"></i>
+                                                </button>
+                                            </form>
+                                        }
+
+                                        @* Superior/Manager/Admin approve cancel when pending *@
+                                        @if (item.Status == "CancelPending" &&
+                                            ((currentUserRole == "Admin" || currentUserRole == "Manager") || item.SuperiorId == currentUserId))
+                                        {
+                                            <form asp-action="ApproveCancel" asp-route-id="@item.RequestId" method="post" style="display:inline">
+                                                <button type="submit" class="btn btn-sm btn-success" title="Approve Cancel">
+                                                    <i class="bi bi-check-circle"></i>
+                                                </button>
+                                            </form>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
                         }
-                    }
-
-                    @* Employee withdraw action for pending *@
-                    @if (currentUserRole == "Employee" && item.EmployeeId == currentUserId && item.Status == "Pending")
-                    {
-                        <form asp-action="Withdraw" asp-route-id="@item.RequestId" method="post" style="display:inline">
-                            <button type="submit" class="btn btn-sm btn-outline-danger">Withdraw</button>
-                        </form>
-                    }
-
-                    @* Employee cancel request for approved *@
-                    @if (currentUserRole == "Employee" && item.EmployeeId == currentUserId && item.Status == "Approved")
-                    {
-                        <form asp-action="RequestCancel" asp-route-id="@item.RequestId" method="post" style="display:inline">
-                            <button type="submit" class="btn btn-sm btn-outline-danger">Request Cancel</button>
-                        </form>
-                    }
-
-                    @* Employee revert cancellation while pending *@
-                    @if (currentUserRole == "Employee" && item.EmployeeId == currentUserId && item.Status == "CancelPending")
-                    {
-                        <form asp-action="RevertCancel" asp-route-id="@item.RequestId" method="post" style="display:inline">
-                            <button type="submit" class="btn btn-sm btn-outline-secondary">Withdraw Cancel</button>
-                        </form>
-                    }
-
-                    @* Superior/Manager/Admin approve cancel when pending *@
-                    @if (item.Status == "CancelPending" &&
-                        ((currentUserRole == "Admin" || currentUserRole == "Manager") || item.SuperiorId == currentUserId))
-                    {
-                        <form asp-action="ApproveCancel" asp-route-id="@item.RequestId" method="post" style="display:inline">
-                            <button type="submit" class="btn btn-sm btn-success">Approve Cancel</button>
-                        </form>
-                    }
-                </td>
-            </tr>
-        }
-    </tbody>
-</table>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+}

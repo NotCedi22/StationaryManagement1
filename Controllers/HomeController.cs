@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using StationaryManagement1.Data;
 using StationaryManagement1.Models.ViewModels;
 using System.Diagnostics;
 
@@ -7,29 +9,25 @@ namespace StationaryManagement1.Controllers
     public class HomeController : Controller
     {
         private readonly ILogger<HomeController> _logger;
+        private readonly AppDBContext _context;
 
-        public HomeController(ILogger<HomeController> logger)
+        public HomeController(ILogger<HomeController> logger, AppDBContext context)
         {
             _logger = logger;
+            _context = context;
         }
 
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
-            // Check if Remember Me cookies exist
-            var rememberedId = Request.Cookies["RememberEmployeeId"];
-            var rememberedName = Request.Cookies["RememberEmployeeName"];
-            var rememberedRole = Request.Cookies["RememberRoleId"];
+            // Fetch dashboard statistics
+            var itemCount = await _context.StationeryItems.CountAsync();
+            var employeeCount = await _context.Employees.CountAsync();
+            var pendingRequests = await _context.StationeryRequests
+                .CountAsync(r => r.Status == "Pending");
 
-            if (!string.IsNullOrEmpty(rememberedId) &&
-                !string.IsNullOrEmpty(rememberedName) &&
-                !string.IsNullOrEmpty(rememberedRole))
-            {
-                ViewData["RememberMessage"] = $"Welcome back, {rememberedName}! (RoleId: {rememberedRole})";
-            }
-            else
-            {
-                ViewData["RememberMessage"] = "No Remember Me cookie found. Please log in.";
-            }
+            ViewData["ItemCount"] = itemCount;
+            ViewData["EmployeeCount"] = employeeCount;
+            ViewData["PendingRequests"] = pendingRequests;
 
             return View();
         }
